@@ -257,6 +257,8 @@ export const Admin: React.FC = () => {
       name: c.name, nameEn: c.nameEn || '', author: c.author || '',
       category: c.category || '', description: c.description || '', coverColor: c.coverColor || ''
     });
+    // 表单渲染在管理区顶部，滚过去让用户立刻看到
+    setTimeout(() => document.getElementById('col-edit-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
   };
 
   const handleSaveCollection = async () => {
@@ -515,31 +517,9 @@ export const Admin: React.FC = () => {
           {zh('管理合集与语录', 'Manage collections & notes')}
         </summary>
         <div className="px-5 pb-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-            {collections.map((c) => (
-              <div key={c.id}
-                className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl">
-                <button onClick={() => openManage(c.id)} className="min-w-0 text-left flex-1">
-                  <div className={`font-medium text-sm truncate ${manageId === c.id ? 'text-blue-600' : 'text-slate-800 dark:text-white'}`}>
-                    {manageId === c.id ? '▾ ' : '▸ '}{c.name}
-                  </div>
-                  <div className="text-xs text-slate-400">{c.id} · {c.count} cards</div>
-                </button>
-                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                  <button onClick={() => (editingColId === c.id ? setEditingColId('') : startEditCollection(c))}
-                    className={`text-xs ${editingColId === c.id ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-blue-600'}`}>
-                    {editingColId === c.id ? zh('收起', 'Close') : zh('编辑', 'Edit')}
-                  </button>
-                  <button onClick={() => handleDeleteCollection(c.id)}
-                    className="text-red-500 hover:text-red-700 text-xs">{zh('删合集', 'Delete')}</button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 合集信息编辑表单 */}
+          {/* 合集信息编辑表单：固定放在网格之前，点「编辑」立刻可见 */}
           {editingColId && (
-            <div className="bg-blue-50/50 dark:bg-slate-900/60 border border-blue-100 dark:border-slate-700 rounded-xl p-4 mb-4">
+            <div id="col-edit-form" className="bg-blue-50/50 dark:bg-slate-900/60 border border-blue-100 dark:border-slate-700 rounded-xl p-4 mb-4">
               <div className="text-xs font-bold text-slate-500 mb-3">
                 {zh(`编辑合集信息：${editingColId}`, `Edit collection: ${editingColId}`)}
               </div>
@@ -573,6 +553,29 @@ export const Admin: React.FC = () => {
               </div>
             </div>
           )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            {collections.map((c) => (
+              <div key={c.id}
+                className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl">
+                <button onClick={() => openManage(c.id)} className="min-w-0 text-left flex-1">
+                  <div className={`font-medium text-sm truncate ${manageId === c.id ? 'text-blue-600' : 'text-slate-800 dark:text-white'}`}>
+                    {manageId === c.id ? '▾ ' : '▸ '}{c.name}
+                  </div>
+                  <div className="text-xs text-slate-400">{c.id} · {c.count} cards</div>
+                </button>
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                  <button onClick={() => (editingColId === c.id ? setEditingColId('') : startEditCollection(c))}
+                    className={`text-xs ${editingColId === c.id ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-blue-600'}`}>
+                    {editingColId === c.id ? zh('收起', 'Close') : zh('编辑', 'Edit')}
+                  </button>
+                  <button onClick={() => handleDeleteCollection(c.id)}
+                    className="text-red-500 hover:text-red-700 text-xs">{zh('删合集', 'Delete')}</button>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {manageId && (
             <div className="space-y-2">
               {manageNotes.length === 0 && <p className="text-slate-400 text-sm">（{zh('无语录', 'no notes')}）</p>}
