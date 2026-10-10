@@ -22,6 +22,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
   const [tagTree, setTagTree] = useState<TagTree>({});
   const [favCount, setFavCount] = useState(0);
   const [favTags, setFavTags] = useState<{ tag: string; count: number }[]>([]);
+  // 折叠状态（localStorage 记忆；false=展开）
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem('inbox_sidebar_collapsed') || '{}'); } catch { return {}; }
+  });
+
+  const toggleCollapsed = (id: string) => {
+    setCollapsed((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      try { localStorage.setItem('inbox_sidebar_collapsed', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   // 动态加载分类（D1）
   useEffect(() => {
@@ -30,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
       .catch(() => {}); // 失败时保留静态兜底
   }, []);
 
-  // 标签树：按分类聚合（常显，不做展开折叠）
+  // 标签树：按分类聚合（可折叠，箭头切换）
   useEffect(() => {
     fetchTagTree().then(setTagTree).catch(() => {});
   }, [location.pathname]); // 收藏/编辑后回到页面时刷新
@@ -92,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
             onClick={() => { onSelectCategory('all'); onClose(); }}
           >
             <img 
-              src="/logo.svg" 
+              src="/logo.svg?v=4"
               alt="inBox Logo" 
               className="w-8 h-8 object-contain"
             />
@@ -204,21 +216,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
               {cats.map(category => {
                 const Icon = ICONS[category.icon || 'BookOpen'] || ICONS.BookOpen;
                 const tags = tagTree[category.id] || [];
+                const isCollapsed = !!collapsed[category.id];
                 return (
                   <div key={category.id}>
-                    <button
-                      onClick={() => { onSelectCategory(category.id); onClose(); }}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
-                        selectedCategory === category.id && !isReviewPage && !isDeveloperPage
-                          ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 font-medium shadow-sm'
-                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                      }`}
-                    >
-                      <Icon size={18} />
-                      <span>{language === 'zh' ? category.name : (category.nameEn || category.name)}</span>
-                    </button>
-                    {/* 标签树：常显，不做展开折叠 */}
-                    {tags.length > 0 && (
+                    <div className="relative">
+                      <button
+                        onClick={() => { onSelectCategory(category.id); onClose(); }}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
+                          selectedCategory === category.id && !isReviewPage && !isDeveloperPage
+                            ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 font-medium shadow-sm'
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                        }`}
+                      >
+                        <Icon size={18} />
+                        <span>{language === 'zh' ? category.name : (category.nameEn || category.name)}</span>
+                      </button>
+                      {/* 折叠/展开箭头（独立于选中分类） */}
+                      {tags.length > 0 && (
+                        <button
+                          onClick={() => toggleCollapsed(category.id)}
+                          aria-label={isCollapsed ? '展开标签' : '折叠标签'}
+                          aria-expanded={!isCollapsed}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                        >
+                          <ICONS.ChevronDown
+                            size={15}
+                            className={`transition-transform duration-200 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}
+                          />
+                        </button>
+                      )}
+                    </div>
+                    {/* 标签树：可折叠 */}
+                    {tags.length > 0 && !isCollapsed && (
                       <div className="pl-11 pr-3 pb-2 flex flex-wrap gap-1">
                         {tags.map(({ tag, count }) => (
                           <button

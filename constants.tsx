@@ -28,7 +28,8 @@ import {
   Star,
   Heart,
   Flag,
-  Bookmark
+  Bookmark,
+  ChevronDown
 } from 'lucide-react';
 import { Category } from './types';
 
@@ -68,5 +69,6 @@ export const ICONS: Record<string, React.FC<any>> = {
   Star,
   Heart,
   Flag,
-  Bookmark
+  Bookmark,
+  ChevronDown
 };
