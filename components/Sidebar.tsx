@@ -3,6 +3,7 @@ import { CATEGORIES, ICONS } from '../constants';
 import { useApp } from '../context';
 import { ApiCategory, fetchCategories, fetchTagTree, TagTree } from '../services/cardService';
 import { favoriteTagCounts, getFavorites, subscribeFavorites } from '../services/favorites';
+import { PineLogo } from './PineLogo';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
@@ -103,11 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
             className="flex items-center space-x-2 text-slate-800 dark:text-white cursor-pointer"
             onClick={() => { onSelectCategory('all'); onClose(); }}
           >
-            <img 
-              src="/logo.svg?v=4"
-              alt="inBox Logo" 
-              className="w-8 h-8 object-contain"
-            />
+            <PineLogo size={32} className="flex-shrink-0" />
             <h1 className="text-xl font-bold tracking-tight">inBox Card</h1>
           </div>
         </div>
