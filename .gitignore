@@ -18,4 +18,4 @@ pnpm-debug.log*
 .env.production.local
 tmp/
 temp/
-package-lock.json
+package-lock.json.playwright-cli/
