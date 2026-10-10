@@ -8,21 +8,20 @@ import { RandomReview } from './pages/RandomReview';
 import { Developer } from './pages/Developer';
 import { Admin } from './pages/Admin';
 import { AppProvider, useApp } from './context';
-import { CategoryId } from './types';
 import { ICONS } from './constants';
 
 const MainLayout: React.FC = () => {
   const { theme, toggleTheme, language, setLanguage, searchQuery, setSearchQuery } = useApp();
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId | 'all'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showHeader, setShowHeader] = useState(true);
-  
+
   const navigate = useNavigate();
   const mainRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
 
   // Unified handler for sidebar navigation
-  const handleCategorySelect = (id: CategoryId | 'all') => {
+  const handleCategorySelect = (id: string | 'all') => {
     setSearchQuery(''); // Force clear search to exit search mode
     setSelectedCategory(id);
     setIsSidebarOpen(false);

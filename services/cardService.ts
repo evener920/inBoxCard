@@ -1,4 +1,4 @@
-import { Note, CategoryId } from '../types';
+import { Note } from '../types';
 
 const getJSON = async (url: string, opts?: RequestInit) => {
   const res = await fetch(url, opts);
@@ -14,11 +14,39 @@ export interface ApiCollection {
   name: string;
   nameEn: string;
   description: string;
-  category: CategoryId;
+  category: string;
   author: string;
   coverColor: string;
   count: number;
 }
+
+export interface ApiCategory {
+  id: string;
+  name: string;
+  nameEn?: string;
+  icon?: string;
+  sort?: number;
+}
+
+// ---------- categories（动态分类，带缓存） ----------
+let categoryCache: ApiCategory[] | null = null;
+
+export const fetchCategories = async (force = false): Promise<ApiCategory[]> => {
+  if (categoryCache && !force) return categoryCache;
+  const data: ApiCategory[] = await getJSON('/api/categories');
+  categoryCache = data;
+  return data;
+};
+
+export const invalidateCategories = () => { categoryCache = null; };
+
+export const adminCreateCategory = (
+  payload: { id?: string; name: string; nameEn?: string; icon?: string },
+  key: string
+) => getJSON('/api/categories', { method: 'POST', headers: adminHeaders(key), body: JSON.stringify(payload) });
+
+export const adminDeleteCategory = (id: string, key: string) =>
+  getJSON(`/api/categories/${id}`, { method: 'DELETE', headers: { 'x-admin-key': key } });
 
 export const fetchCollections = (): Promise<ApiCollection[]> => getJSON('/api/collections');
 

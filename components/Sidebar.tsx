@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CATEGORIES, ICONS } from '../constants';
 import { useApp } from '../context';
-import { CategoryId } from '../types';
+import { ApiCategory, fetchCategories } from '../services/cardService';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
-  selectedCategory: CategoryId | 'all';
-  onSelectCategory: (id: CategoryId | 'all') => void;
+  selectedCategory: string | 'all';
+  onSelectCategory: (id: string | 'all') => void;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -15,6 +15,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
   const { language, handleInstallClick } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
+  const [cats, setCats] = useState<ApiCategory[]>(
+    CATEGORIES.map((c) => ({ id: c.id, name: c.label, nameEn: c.labelEn, icon: c.iconName }))
+  );
+
+  // 动态加载分类（D1）
+  useEffect(() => {
+    fetchCategories()
+      .then(setCats)
+      .catch(() => {}); // 失败时保留静态兜底
+  }, []);
 
   const handleRandomClick = () => {
     navigate('/review');
@@ -124,20 +134,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
               <p className="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                 {language === 'zh' ? '分类' : 'Categories'}
               </p>
-              {CATEGORIES.map(category => {
-                const Icon = ICONS[category.iconName];
+              {cats.map(category => {
+                const Icon = ICONS[category.icon || 'BookOpen'] || ICONS.BookOpen;
                 return (
                   <button
                     key={category.id}
                     onClick={() => { onSelectCategory(category.id); onClose(); }}
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
                       selectedCategory === category.id && !isReviewPage && !isDeveloperPage
-                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 font-medium shadow-sm' 
+                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 font-medium shadow-sm'
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                     }`}
                   >
                     <Icon size={18} />
-                    <span>{language === 'zh' ? category.label : category.labelEn}</span>
+                    <span>{language === 'zh' ? category.name : (category.nameEn || category.name)}</span>
                   </button>
                 );
               })}

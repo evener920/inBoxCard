@@ -1,13 +1,13 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../context';
-import { CategoryId, Note } from '../types';
+import { Note } from '../types';
 import { ICONS } from '../constants';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { ApiCollection, fetchCollections, fetchNotes } from '../services/cardService';
 
 interface HomeProps {
-  selectedCategory: CategoryId | 'all';
+  selectedCategory: string | 'all';
 }
 
 interface SearchResult extends Note {
@@ -40,7 +40,7 @@ export const Home: React.FC<HomeProps> = ({ selectedCategory }) => {
       result = result.filter(c => c.category === selectedCategory);
     }
     return result;
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, collections]);
 
   // Perform deep search on content
   useEffect(() => {

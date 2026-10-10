@@ -21,15 +21,19 @@ import {
   Shuffle,
   Share2,
   Terminal,
-  Check
+  Check,
+  Star,
+  Heart,
+  Flag,
+  Bookmark
 } from 'lucide-react';
-import { Category, CategoryId } from './types';
+import { Category } from './types';
 
 export const CATEGORIES: Category[] = [
-  { id: CategoryId.ENTREPRENEUR, label: '商业巨擘', labelEn: 'Entrepreneurs', iconName: 'Briefcase' },
-  { id: CategoryId.PHILOSOPHY, label: '哲学思想', labelEn: 'Philosophy', iconName: 'BookOpen' },
-  { id: CategoryId.LITERATURE, label: '文学经典', labelEn: 'Literature', iconName: 'Feather' },
-  { id: CategoryId.HISTORY, label: '历史智慧', labelEn: 'History', iconName: 'History' },
+  { id: 'entrepreneur', label: '商业巨擘', labelEn: 'Entrepreneurs', iconName: 'Briefcase' },
+  { id: 'philosophy', label: '哲学思想', labelEn: 'Philosophy', iconName: 'BookOpen' },
+  { id: 'literature', label: '文学经典', labelEn: 'Literature', iconName: 'Feather' },
+  { id: 'history', label: '历史智慧', labelEn: 'History', iconName: 'History' },
 ];
 
 export const ICONS: Record<string, React.FC<any>> = {
@@ -54,5 +58,9 @@ export const ICONS: Record<string, React.FC<any>> = {
   Shuffle,
   Share2,
   Terminal,
-  Check
+  Check,
+  Star,
+  Heart,
+  Flag,
+  Bookmark
 };

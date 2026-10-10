@@ -12,7 +12,7 @@ export interface Collection {
   name: string;
   nameEn: string;
   description: string;
-  category: CategoryId;
+  category: string; // 分类 id，对应 D1 categories 表
   author: string;
   coverColor: string;
   filePath: string; // Path to the .txt file in the cards directory
@@ -20,18 +20,11 @@ export interface Collection {
   notes?: Note[]; // Optional now, loaded async
 }
 
-export enum CategoryId {
-  ENTREPRENEUR = 'entrepreneur',
-  PHILOSOPHY = 'philosophy',
-  LITERATURE = 'literature',
-  HISTORY = 'history'
-}
-
 export interface Category {
-  id: CategoryId;
+  id: string;
   label: string;
-  labelEn: string;
-  iconName: string;
+  labelEn?: string;
+  iconName?: string; // lucide-react icon key in ICONS
 }
 
 export type Language = 'zh' | 'en';

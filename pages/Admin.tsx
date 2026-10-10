@@ -2,24 +2,25 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useApp } from '../context';
 import {
   ApiCollection,
+  ApiCategory,
   fetchCollections,
   fetchNotes,
+  fetchCategories,
   adminCreateCollection,
   adminAppendNotes,
   adminDeleteCollection,
-  adminDeleteNote
+  adminDeleteNote,
+  adminCreateCategory,
+  adminDeleteCategory
 } from '../services/cardService';
 import { Note } from '../types';
+import { ICONS } from '../constants';
 
 const inputCls =
   'px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500';
 
-const CATEGORY_OPTIONS = [
-  { value: 'entrepreneur', label: '商业巨擘' },
-  { value: 'philosophy', label: '哲学思想' },
-  { value: 'literature', label: '文学经典' },
-  { value: 'history', label: '历史智慧' }
-];
+const ICON_OPTIONS = ['BookOpen', 'Briefcase', 'Feather', 'History', 'Globe', 'Sparkles', 'Dices', 'Terminal', 'Search', 'Share2', 'Moon', 'Sun', 'Star', 'Heart', 'Flag', 'Bookmark'];
+const FALLBACK_ICONS: Record<string, any> = { Star: '✦', Heart: '♥', Flag: '⚑', Bookmark: '⚓' };
 
 const COLOR_OPTIONS = [
   'bg-slate-600', 'bg-stone-600', 'bg-red-600', 'bg-orange-600', 'bg-amber-600',
@@ -76,6 +77,12 @@ export const Admin: React.FC = () => {
   const [targetId, setTargetId] = useState('');
   const [text, setText] = useState('');
 
+  // 动态分类
+  const [cats, setCats] = useState<ApiCategory[]>([]);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatEn, setNewCatEn] = useState('');
+  const [newCatIcon, setNewCatIcon] = useState('BookOpen');
+
   // 新建合集的极简字段
   const [name, setName] = useState('');
   const [showMore, setShowMore] = useState(false);
@@ -101,6 +108,24 @@ export const Admin: React.FC = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  const loadCats = useCallback(async () => {
+    try {
+      const list = await fetchCategories(true);
+      setCats(list);
+      // 保证默认选中项存在
+      setMore((m) =>
+        list.some((c) => c.id === m.category) || !list.length
+          ? m
+          : { ...m, category: list[0].id }
+      );
+    } catch {
+      // 忽略，下拉留空可手输
+    }
+  }, []);
+  useEffect(() => {
+    loadCats();
+  }, [loadCats]);
 
   const parsedCount = useMemo(() => {
     if (!text.trim()) return 0;
@@ -204,6 +229,45 @@ export const Admin: React.FC = () => {
     setBusy(false);
   };
 
+  const handleCreateCategory = async () => {
+    if (!ensureKey()) return;
+    if (!newCatName.trim()) {
+      setError(zh('请填写分类名称', 'Category name required'));
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const res: any = await adminCreateCategory(
+        { name: newCatName.trim(), nameEn: newCatEn.trim(), icon: newCatIcon },
+        key
+      );
+      await loadCats();
+      setMore((m) => ({ ...m, category: res.id }));
+      setOkMsg(zh(`已创建分类「${newCatName.trim()}」`, `Category "${newCatName.trim()}" created`));
+      setNewCatName('');
+      setNewCatEn('');
+      setNewCatIcon('BookOpen');
+    } catch (e: any) {
+      setError(zh('创建分类失败: ', 'Create category failed: ') + (e.message || e));
+    }
+    setBusy(false);
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!ensureKey()) return;
+    if (!confirm(zh(`确认删除分类 ${id}？`, `Delete category ${id}?`))) return;
+    setBusy(true);
+    try {
+      await adminDeleteCategory(id, key);
+      if (more.category === id) setMore((m) => ({ ...m, category: cats.find((c) => c.id !== id)?.id || '' }));
+      await loadCats();
+    } catch (e: any) {
+      setError(zh('删除分类失败: ', 'Delete category failed: ') + (e.message || e));
+    }
+    setBusy(false);
+  };
+
   // ---------- 口令未确认时，先只显示口令页 ----------
   if (!keyLocked) {
     return (
@@ -280,12 +344,31 @@ export const Admin: React.FC = () => {
                   onChange={(e) => setMore({ ...more, author: e.target.value })} />
                 <select className={inputCls} value={more.category}
                   onChange={(e) => setMore({ ...more, category: e.target.value })}>
-                  {CATEGORY_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
+                  {cats.length === 0 && <option value={more.category}>{more.category || '（无分类）'}</option>}
+                  {cats.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
                 <input className={inputCls} placeholder={zh('简介', 'Description')} value={more.description}
                   onChange={(e) => setMore({ ...more, description: e.target.value })} />
+                {/* 内联新增分类 */}
+                <div className="md:col-span-2 flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl">
+                  <span className="text-xs font-semibold text-slate-500">{zh('新增分类：', 'New category:')}</span>
+                  <input className={inputCls + ' flex-1 min-w-[8rem]'} placeholder={zh('分类名称（如：国学经典）', 'Category name')}
+                    value={newCatName} onChange={(e) => setNewCatName(e.target.value)} />
+                  <input className={inputCls + ' w-32'} placeholder="EN name（可选）" value={newCatEn}
+                    onChange={(e) => setNewCatEn(e.target.value)} />
+                  <select className={inputCls + ' w-auto'} value={newCatIcon}
+                    onChange={(e) => setNewCatIcon(e.target.value)}>
+                    {ICON_OPTIONS.map((ic) => (
+                      <option key={ic} value={ic}>{FALLBACK_ICONS[ic] || ''} {ic}</option>
+                    ))}
+                  </select>
+                  <button onClick={handleCreateCategory} disabled={busy || !newCatName.trim()}
+                    className="px-3 py-2 rounded-lg bg-slate-800 dark:bg-slate-700 text-white text-xs font-bold disabled:opacity-50">
+                    {zh('＋建分类', '＋ Add')}
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -309,6 +392,55 @@ export const Admin: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* 分类管理（折叠） */}
+      <details className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 mb-4">
+        <summary className="px-5 py-4 cursor-pointer font-bold select-none">
+          {zh('分类管理', 'Manage categories')}
+        </summary>
+        <div className="px-5 pb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            {cats.map((c) => (
+              <div key={c.id}
+                className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl">
+                <div className="flex items-center gap-2 min-w-0">
+                  {(() => {
+                    const Icon = (ICONS as any)[c.icon || 'BookOpen'] || ICONS.BookOpen;
+                    return <Icon size={16} className="text-slate-400 flex-shrink-0" />;
+                  })()}
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm text-slate-800 dark:text-white truncate">{c.name}</div>
+                    <div className="text-xs text-slate-400">{c.id}{c.nameEn ? ` · ${c.nameEn}` : ''}</div>
+                  </div>
+                </div>
+                <button onClick={() => handleDeleteCategory(c.id)}
+                  className="text-red-500 hover:text-red-700 text-xs flex-shrink-0 ml-2">{zh('删除', 'Delete')}</button>
+              </div>
+            ))}
+            {cats.length === 0 && <p className="text-slate-400 text-sm">{zh('暂无分类', 'No categories')}</p>}
+          </div>
+          {/* 新增分类表单 */}
+          <div className="flex flex-wrap items-center gap-2">
+            <input className={inputCls + ' flex-1 min-w-[10rem]'} placeholder={zh('分类名称（必填）', 'Category name (required)')}
+              value={newCatName} onChange={(e) => setNewCatName(e.target.value)} />
+            <input className={inputCls + ' w-36'} placeholder="EN name（可选）" value={newCatEn}
+              onChange={(e) => setNewCatEn(e.target.value)} />
+            <select className={inputCls + ' w-auto'} value={newCatIcon}
+              onChange={(e) => setNewCatIcon(e.target.value)}>
+              {ICON_OPTIONS.map((ic) => (
+                <option key={ic} value={ic}>{FALLBACK_ICONS[ic] || ''} {ic}</option>
+              ))}
+            </select>
+            <button onClick={handleCreateCategory} disabled={busy || !newCatName.trim()}
+              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold disabled:opacity-50">
+              {zh('＋新增分类', '＋ Add category')}
+            </button>
+          </div>
+          <p className="text-xs text-slate-400 mt-3">
+            {zh('删除分类前需先删除或移动使用它的合集；新分类会立即出现在侧栏。', 'A category in use cannot be deleted. New categories appear in the sidebar immediately.')}
+          </p>
+        </div>
+      </details>
 
       {/* 管理（折叠） */}
       <details className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
