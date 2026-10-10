@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CATEGORIES, ICONS } from '../constants';
 import { useApp } from '../context';
 import { CategoryId } from '../types';
@@ -13,7 +13,6 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCategory, isOpen, onClose }) => {
   const { language, handleInstallClick } = useApp();
-  const [showPromo, setShowPromo] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -148,8 +147,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
         </div>
 
         {/* Fixed Footer */}
-        <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex-shrink-0 space-y-4 bg-white dark:bg-slate-900 z-10">
-           
+        <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex-shrink-0 bg-white dark:bg-slate-900 z-10">
+
            {/* PWA Install Button - Mobile only */}
            <button
              onClick={handleInstallClick}
@@ -158,48 +157,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
              <ICONS.Download size={16} />
              <span>{language === 'zh' ? '安装到桌面' : 'Install App'}</span>
            </button>
-
-           {/* GongZhongHao Promo */}
-           {showPromo && (
-             <div className="relative bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50 animate-fadeIn">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setShowPromo(false); }}
-                  className="absolute top-0 right-0 p-4 text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 transition-colors z-20"
-                  title={language === 'zh' ? '关闭' : 'Close'}
-                >
-                  <ICONS.X size={16} />
-                </button>
-                <p className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                  关注公众号：咕咚同学
-                </p>
-                <div className="bg-white p-2 rounded-lg shadow-sm mb-3">
-                   <img 
-                    src="https://blog.gudong.site/assets/profile/gongzhonghao.jpg" 
-                    alt="咕咚同学" 
-                    className="w-full rounded-md aspect-square object-cover"
-                  />
-                </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center leading-relaxed">
-                  回复 <b className="text-blue-600 dark:text-blue-400">inbox</b> 加入<br/>用户交流微信群
-                </p>
-             </div>
-           )}
-
-           {/* Github Link */}
-           <a 
-             href="https://github.com/maoruibin/inBoxCard" 
-             target="_blank" 
-             rel="noopener noreferrer"
-             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold transition-transform hover:scale-[1.02] active:scale-95 shadow-md"
-           >
-             <ICONS.Github size={16} />
-             <span>GitHub</span>
-           </a>
-
-           <div className="text-xs text-slate-300 dark:text-slate-600 text-center font-mono">
-             Designed by Gemini & 咕咚
-           </div>
         </div>
       </div>
     </>
