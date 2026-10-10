@@ -246,6 +246,8 @@ export const CollectionDetail: React.FC = () => {
         <Slideshow
           notes={notes}
           startIndex={0}
+          collectionId={id || undefined}
+          collectionName={language === 'zh' ? collection?.name : collection?.nameEn}
           onClose={() => setShowSlideshow(false)}
           onNoteUpdated={(updated) =>
             setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)))

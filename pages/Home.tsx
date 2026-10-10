@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../context';
 import { Note } from '../types';
 import { ICONS } from '../constants';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { ApiCollection, fetchCollections, fetchNotes } from '../services/cardService';
 
@@ -97,6 +97,13 @@ export const Home: React.FC<HomeProps> = ({ selectedCategory }) => {
     setSearchResults([]);
     setIsSearching(false);
   }, [selectedCategory]);
+
+  // 侧栏标签树点击 → 以该标签进入搜索（须声明在上面的清空效果之后才能生效）
+  const location = useLocation();
+  useEffect(() => {
+    const tag = (location.state as any)?.tag;
+    if (tag) setSearchQuery(tag);
+  }, [location.state]);
 
   // Render Search Results
   if (searchQuery.trim()) {

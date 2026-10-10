@@ -50,6 +50,16 @@ export const adminDeleteCategory = (id: string, key: string) =>
 
 export const fetchCollections = (): Promise<ApiCollection[]> => getJSON('/api/collections');
 
+// ---------- 标签树（按分类聚合，带缓存） ----------
+export type TagTree = Record<string, { tag: string; count: number }[]>;
+let tagTreeCache: TagTree | null = null;
+
+export const fetchTagTree = async (force = false): Promise<TagTree> => {
+  if (tagTreeCache && !force) return tagTreeCache;
+  tagTreeCache = (await getJSON('/api/tags')) as TagTree;
+  return tagTreeCache;
+};
+
 export const fetchCollection = (
   id: string
 ): Promise<ApiCollection & { notes: Note[] }> => getJSON(`/api/collections/${id}`);

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { CATEGORIES, ICONS } from '../constants';
 import { useApp } from '../context';
-import { ApiCategory, fetchCategories } from '../services/cardService';
+import { ApiCategory, fetchCategories, fetchTagTree, TagTree } from '../services/cardService';
+import { favoriteTagCounts, getFavorites, subscribeFavorites } from '../services/favorites';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
@@ -18,6 +19,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
   const [cats, setCats] = useState<ApiCategory[]>(
     CATEGORIES.map((c) => ({ id: c.id, name: c.label, nameEn: c.labelEn, icon: c.iconName }))
   );
+  const [tagTree, setTagTree] = useState<TagTree>({});
+  const [favCount, setFavCount] = useState(0);
+  const [favTags, setFavTags] = useState<{ tag: string; count: number }[]>([]);
 
   // 动态加载分类（D1）
   useEffect(() => {
@@ -25,6 +29,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
       .then(setCats)
       .catch(() => {}); // 失败时保留静态兜底
   }, []);
+
+  // 标签树：按分类聚合（常显，不做展开折叠）
+  useEffect(() => {
+    fetchTagTree().then(setTagTree).catch(() => {});
+  }, [location.pathname]); // 收藏/编辑后回到页面时刷新
+
+  // 收藏（localStorage，跨组件同步）
+  useEffect(() => {
+    const sync = () => {
+      setFavCount(getFavorites().length);
+      setFavTags(favoriteTagCounts());
+    };
+    sync();
+    return subscribeFavorites(sync);
+  }, []);
+
+  // 点击标签 → 全局搜索该标签（搜索已支持 tags 匹配）
+  const handleTagClick = (tag: string) => {
+    onSelectCategory('all');
+    navigate('/', { state: { tag } });
+    onClose();
+  };
+
+  const handleFavoritesClick = (tag?: string) => {
+    navigate('/favorites', { state: tag ? { tag } : undefined });
+    onClose();
+  };
 
   const handleRandomClick = () => {
     navigate('/review');
@@ -129,26 +160,79 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
             </button>
 
             <div className="my-4 border-t border-slate-100 dark:border-slate-800/50" />
-            
+
+            {/* 收藏文件夹 + 收藏标签树 */}
+            <button
+              onClick={() => handleFavoritesClick()}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
+                location.pathname === '/favorites'
+                  ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 font-medium shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+              }`}
+            >
+              <span className="w-5 h-5 flex items-center justify-center">
+                <ICONS.Bookmark size={18} />
+              </span>
+              <span>{language === 'zh' ? '我的收藏' : 'Favorites'}</span>
+              {favCount > 0 && (
+                <span className="ml-auto text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300">
+                  {favCount}
+                </span>
+              )}
+            </button>
+            {favTags.length > 0 && (
+              <div className="pl-11 pr-3 pb-2 flex flex-wrap gap-1">
+                {favTags.map(({ tag, count }) => (
+                  <button
+                    key={tag}
+                    onClick={() => handleFavoritesClick(tag)}
+                    title={`${tag} × ${count}`}
+                    className="text-[11px] leading-none px-1.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-amber-100 hover:text-amber-600 dark:hover:bg-amber-900/40 dark:hover:text-amber-300 transition-colors"
+                  >
+                    #{tag}<span className="opacity-50 ml-0.5">{count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="my-4 border-t border-slate-100 dark:border-slate-800/50" />
+
             <div className="space-y-1">
               <p className="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                 {language === 'zh' ? '分类' : 'Categories'}
               </p>
               {cats.map(category => {
                 const Icon = ICONS[category.icon || 'BookOpen'] || ICONS.BookOpen;
+                const tags = tagTree[category.id] || [];
                 return (
-                  <button
-                    key={category.id}
-                    onClick={() => { onSelectCategory(category.id); onClose(); }}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
-                      selectedCategory === category.id && !isReviewPage && !isDeveloperPage
-                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 font-medium shadow-sm'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                    }`}
-                  >
-                    <Icon size={18} />
-                    <span>{language === 'zh' ? category.name : (category.nameEn || category.name)}</span>
-                  </button>
+                  <div key={category.id}>
+                    <button
+                      onClick={() => { onSelectCategory(category.id); onClose(); }}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
+                        selectedCategory === category.id && !isReviewPage && !isDeveloperPage
+                          ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 font-medium shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <Icon size={18} />
+                      <span>{language === 'zh' ? category.name : (category.nameEn || category.name)}</span>
+                    </button>
+                    {/* 标签树：常显，不做展开折叠 */}
+                    {tags.length > 0 && (
+                      <div className="pl-11 pr-3 pb-2 flex flex-wrap gap-1">
+                        {tags.map(({ tag, count }) => (
+                          <button
+                            key={tag}
+                            onClick={() => handleTagClick(tag)}
+                            title={`${tag} × ${count}`}
+                            className="text-[11px] leading-none px-1.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/40 dark:hover:text-blue-300 transition-colors"
+                          >
+                            #{tag}<span className="opacity-50 ml-0.5">{count}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>

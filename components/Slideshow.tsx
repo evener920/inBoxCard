@@ -3,10 +3,13 @@ import { Note } from '../types';
 import { useApp } from '../context';
 import { ICONS } from '../constants';
 import { adminUpdateNote } from '../services/cardService';
+import { isFavorite, toggleFavorite } from '../services/favorites';
 
 interface SlideshowProps {
   notes: Note[];
   startIndex?: number;
+  collectionId?: string;
+  collectionName?: string;
   onClose: () => void;
   onNoteUpdated: (note: Note) => void;
 }
@@ -15,7 +18,7 @@ const AUTO_MS = 6000;
 
 const cleanSource = (source: string) => source.replace(/^[—\-\s]+/, '');
 
-export const Slideshow: React.FC<SlideshowProps> = ({ notes, startIndex = 0, onClose, onNoteUpdated }) => {
+export const Slideshow: React.FC<SlideshowProps> = ({ notes, startIndex = 0, collectionId, collectionName, onClose, onNoteUpdated }) => {
   const { language } = useApp();
   const zh = (z: string, e: string) => (language === 'zh' ? z : e);
 
@@ -28,8 +31,27 @@ export const Slideshow: React.FC<SlideshowProps> = ({ notes, startIndex = 0, onC
   const [noteForm, setNoteForm] = useState({ timestamp: '', content: '' });
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [, setFavTick] = useState(0); // 触发收藏状态重渲染
 
   const note = notes[idx];
+  const fav = note ? isFavorite(note.id) : false;
+
+  const doFavorite = useCallback(() => {
+    if (!note) return;
+    toggleFavorite({
+      id: note.id,
+      content: note.content,
+      tags: note.tags,
+      source: note.source,
+      timestamp: note.timestamp,
+      collectionId,
+      collectionName
+    });
+    setFavTick((t) => t + 1);
+    setMsg(isFavorite(note.id) ? zh('已收藏', 'Favorited') : zh('已取消收藏', 'Unfavorited'));
+    setTimeout(() => setMsg(null), 1500);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [note, collectionId, collectionName]);
 
   const go = useCallback(
     (dir: number) => {
@@ -77,6 +99,10 @@ export const Slideshow: React.FC<SlideshowProps> = ({ notes, startIndex = 0, onC
         case 'E':
           if (note) startEdit(note);
           break;
+        case 'f':
+        case 'F':
+          doFavorite();
+          break;
         case 'Escape':
           onClose();
           break;
@@ -85,7 +111,7 @@ export const Slideshow: React.FC<SlideshowProps> = ({ notes, startIndex = 0, onC
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [go, editing, note]);
+  }, [go, editing, note, doFavorite]);
 
   const startEdit = (n: Note) => {
     let content = n.content;
@@ -136,6 +162,15 @@ export const Slideshow: React.FC<SlideshowProps> = ({ notes, startIndex = 0, onC
           {idx + 1} / {total}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={doFavorite}
+            className={`p-2.5 rounded-full transition-colors ${
+              fav ? 'bg-amber-400/20 text-amber-300 hover:bg-amber-400/30' : 'bg-white/10 hover:bg-white/20'
+            }`}
+            title={zh(fav ? '取消收藏 (F)' : '收藏 (F)', fav ? 'Unfavorite (F)' : 'Favorite (F)')}
+          >
+            <ICONS.Star size={18} fill={fav ? 'currentColor' : 'none'} />
+          </button>
           <button
             onClick={() => setPlaying((p) => !p)}
             className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
@@ -214,8 +249,13 @@ export const Slideshow: React.FC<SlideshowProps> = ({ notes, startIndex = 0, onC
         ) : (
           <div
             key={note?.id}
-            className="w-full max-w-4xl bg-slate-900/70 rounded-3xl p-10 md:p-16 border border-slate-800 shadow-2xl animate-fadeIn"
+            className="relative w-full max-w-4xl bg-slate-900/70 rounded-3xl p-10 md:p-16 border border-slate-800 shadow-2xl animate-fadeIn"
           >
+            {fav && (
+              <span className="absolute top-5 right-6 text-amber-300" title={zh('已收藏', 'Favorited')}>
+                <ICONS.Star size={22} fill="currentColor" />
+              </span>
+            )}
             <div className="text-slate-600 -ml-1 mb-6 select-none">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H15.017C14.4647 8 14.017 8.44772 14.017 9V11C14.017 11.5523 13.5693 12 13.017 12H12.017V5H22.017V15C22.017 18.3137 19.3307 21 16.017 21H14.017ZM5.0166 21L5.0166 18C5.0166 16.8954 5.91203 16 7.0166 16H10.0166C10.5689 16 11.0166 15.5523 11.0166 15V9C11.0166 8.44772 10.5689 8 10.0166 8H6.0166C5.46432 8 5.0166 8.44772 5.0166 9V11C5.0166 11.5523 4.56889 12 4.0166 12H3.0166V5H13.0166V15C13.0166 18.3137 10.3303 21 7.0166 21H5.0166Z" />
@@ -258,7 +298,7 @@ export const Slideshow: React.FC<SlideshowProps> = ({ notes, startIndex = 0, onC
           ))}
         </div>
         <div className="text-[11px] text-slate-500 text-center">
-          {zh('← → 切换 · 空格 下一张 · P 轮播 · E 编辑 · Esc 退出', '← → navigate · Space next · P auto-play · E edit · Esc exit')}
+          {zh('← → 切换 · 空格 下一张 · F 收藏 · P 轮播 · E 编辑 · Esc 退出', '← → navigate · Space next · F favorite · P auto-play · E edit · Esc exit')}
         </div>
         {msg && <div className="text-xs text-emerald-400">{msg}</div>}
       </div>
