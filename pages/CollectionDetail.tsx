@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context';
 import { ICONS } from '../constants';
 import { Card } from '../components/Card';
+import { Slideshow } from '../components/Slideshow';
 import { Note } from '../types';
 import { ApiCollection, fetchCollection } from '../services/cardService';
 
@@ -27,6 +28,7 @@ export const CollectionDetail: React.FC = () => {
   const [collection, setCollection] = useState<ApiCollection | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSlideshow, setShowSlideshow] = useState(false);
 
   useEffect(() => {
     const mainElement = document.querySelector('main');
@@ -130,6 +132,16 @@ export const CollectionDetail: React.FC = () => {
               <span>{language === 'zh' ? '源码' : 'Source'}</span>
             </button>
           </div>
+
+          <button
+            onClick={() => setShowSlideshow(true)}
+            disabled={notes.length === 0}
+            className="flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-xs md:text-sm font-semibold transition-all flex-shrink-0 shadow-sm"
+            title={language === 'zh' ? '卡片轮播（快捷键：← → 切换，空格下一张，P 轮播，E 编辑，Esc 退出）' : 'Slideshow (keys: ← →, Space, P, E, Esc)'}
+          >
+            <ICONS.Play size={14} className="md:w-4 md:h-4" />
+            <span>{language === 'zh' ? '轮播' : 'Play'}</span>
+          </button>
         </div>
       </div>
 
@@ -228,6 +240,17 @@ export const CollectionDetail: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showSlideshow && (
+        <Slideshow
+          notes={notes}
+          startIndex={0}
+          onClose={() => setShowSlideshow(false)}
+          onNoteUpdated={(updated) =>
+            setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)))
+          }
+        />
       )}
     </div>
   );
