@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Home } from './pages/Home';
 import { CollectionDetail } from './pages/CollectionDetail';
@@ -17,8 +17,13 @@ const MainLayout: React.FC = () => {
   const [showHeader, setShowHeader] = useState(true);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const mainRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
+
+  // 仅首页保留「下滑隐藏顶栏」：其他页面（合集详情等）有 sticky 工具栏，
+  // 顶栏收起会改变 main 高度，导致 sticky 栏弹跳抖动，故这些页面顶栏恒定显示。
+  const autoHideHeader = location.pathname === '/';
 
   // Unified handler for sidebar navigation
   const handleCategorySelect = (id: string | 'all') => {
@@ -41,11 +46,17 @@ const MainLayout: React.FC = () => {
       const currentScrollY = mainElement.scrollTop;
       const scrollDiff = currentScrollY - lastScrollY.current;
 
+      if (!autoHideHeader) {
+        setShowHeader(true);
+        lastScrollY.current = currentScrollY;
+        return;
+      }
+
       // Logic:
       // 1. If at the very top, always show header.
       // 2. If scrolling down (diff > 0) and moved a bit (> 10px), hide header.
       // 3. If scrolling up (diff < 0), show header.
-      
+
       if (currentScrollY < 10) {
         setShowHeader(true);
       } else if (scrollDiff > 10) {
@@ -59,7 +70,12 @@ const MainLayout: React.FC = () => {
 
     mainElement.addEventListener('scroll', handleScroll, { passive: true });
     return () => mainElement.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [autoHideHeader]);
+
+  // 路由切换时确保顶栏恢复显示
+  useEffect(() => {
+    setShowHeader(true);
+  }, [location.pathname]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200">

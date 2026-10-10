@@ -11,7 +11,9 @@ import {
   adminDeleteCollection,
   adminDeleteNote,
   adminCreateCategory,
-  adminDeleteCategory
+  adminDeleteCategory,
+  adminUpdateNote,
+  adminUpdateCollection
 } from '../services/cardService';
 import { Note } from '../types';
 import { ICONS } from '../constants';
@@ -91,6 +93,12 @@ export const Admin: React.FC = () => {
   // 管理
   const [manageId, setManageId] = useState('');
   const [manageNotes, setManageNotes] = useState<Note[]>([]);
+
+  // 编辑语录 / 编辑合集
+  const [editingNoteId, setEditingNoteId] = useState('');
+  const [noteForm, setNoteForm] = useState({ timestamp: '', content: '' });
+  const [editingColId, setEditingColId] = useState('');
+  const [colForm, setColForm] = useState({ name: '', nameEn: '', author: '', category: '', description: '', coverColor: '' });
 
   const saveKey = (k: string) => {
     setKey(k);
@@ -207,6 +215,65 @@ export const Admin: React.FC = () => {
       await load();
     } catch (e: any) {
       setError(zh('删除语录失败: ', 'Delete note failed: ') + (e.message || e));
+    }
+    setBusy(false);
+  };
+
+  const startEditNote = (n: Note) => {
+    setEditingColId('');
+    setEditingNoteId(n.id);
+    // 把标签/出处拼回正文尾部，一起编辑（保存时后端自动重新提取）
+    let content = n.content;
+    if (n.tags && n.tags.length) content += '\n' + n.tags.map((t) => '#' + t).join(' ');
+    if (n.source) content += '\n——' + n.source;
+    setNoteForm({ timestamp: n.timestamp, content });
+  };
+
+  const handleSaveNote = async () => {
+    if (!ensureKey() || !editingNoteId) return;
+    if (!noteForm.content.trim()) {
+      setError(zh('内容不能为空', 'Content required'));
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await adminUpdateNote(editingNoteId, noteForm, key);
+      const fresh = await fetchNotes(manageId);
+      setManageNotes(fresh);
+      setEditingNoteId('');
+      setOkMsg(zh('语录已更新', 'Note updated'));
+      await load();
+    } catch (e: any) {
+      setError(zh('更新语录失败: ', 'Update note failed: ') + (e.message || e));
+    }
+    setBusy(false);
+  };
+
+  const startEditCollection = (c: ApiCollection) => {
+    setEditingNoteId('');
+    setEditingColId(c.id);
+    setColForm({
+      name: c.name, nameEn: c.nameEn || '', author: c.author || '',
+      category: c.category || '', description: c.description || '', coverColor: c.coverColor || ''
+    });
+  };
+
+  const handleSaveCollection = async () => {
+    if (!ensureKey() || !editingColId) return;
+    if (!colForm.name.trim()) {
+      setError(zh('名称不能为空', 'Name required'));
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await adminUpdateCollection(editingColId, colForm, key);
+      setEditingColId('');
+      setOkMsg(zh('合集信息已更新', 'Collection updated'));
+      await load();
+    } catch (e: any) {
+      setError(zh('更新合集失败: ', 'Update collection failed: ') + (e.message || e));
     }
     setBusy(false);
   };
@@ -458,22 +525,100 @@ export const Admin: React.FC = () => {
                   </div>
                   <div className="text-xs text-slate-400">{c.id} · {c.count} cards</div>
                 </button>
-                <button onClick={() => handleDeleteCollection(c.id)}
-                  className="text-red-500 hover:text-red-700 text-xs flex-shrink-0 ml-2">{zh('删合集', 'Delete')}</button>
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                  <button onClick={() => (editingColId === c.id ? setEditingColId('') : startEditCollection(c))}
+                    className={`text-xs ${editingColId === c.id ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-blue-600'}`}>
+                    {editingColId === c.id ? zh('收起', 'Close') : zh('编辑', 'Edit')}
+                  </button>
+                  <button onClick={() => handleDeleteCollection(c.id)}
+                    className="text-red-500 hover:text-red-700 text-xs">{zh('删合集', 'Delete')}</button>
+                </div>
               </div>
             ))}
           </div>
+
+          {/* 合集信息编辑表单 */}
+          {editingColId && (
+            <div className="bg-blue-50/50 dark:bg-slate-900/60 border border-blue-100 dark:border-slate-700 rounded-xl p-4 mb-4">
+              <div className="text-xs font-bold text-slate-500 mb-3">
+                {zh(`编辑合集信息：${editingColId}`, `Edit collection: ${editingColId}`)}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input className={inputCls} placeholder={zh('名称（必填）', 'Name (required)')} value={colForm.name}
+                  onChange={(e) => setColForm({ ...colForm, name: e.target.value })} />
+                <input className={inputCls} placeholder="Name (EN)" value={colForm.nameEn}
+                  onChange={(e) => setColForm({ ...colForm, nameEn: e.target.value })} />
+                <input className={inputCls} placeholder={zh('作者', 'Author')} value={colForm.author}
+                  onChange={(e) => setColForm({ ...colForm, author: e.target.value })} />
+                <select className={inputCls} value={colForm.category}
+                  onChange={(e) => setColForm({ ...colForm, category: e.target.value })}>
+                  {cats.length === 0 && <option value={colForm.category}>{colForm.category || '（无分类）'}</option>}
+                  {cats.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                </select>
+                <input className={inputCls} placeholder={zh('简介', 'Description')} value={colForm.description}
+                  onChange={(e) => setColForm({ ...colForm, description: e.target.value })} />
+                <select className={inputCls} value={colForm.coverColor}
+                  onChange={(e) => setColForm({ ...colForm, coverColor: e.target.value })}>
+                  <option value="">{zh('封面色（保持不变）', 'Cover color (keep)')}</option>
+                  {COLOR_OPTIONS.map((c) => (<option key={c} value={c}>{c}</option>))}
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 mt-3">
+                <button onClick={() => setEditingColId('')}
+                  className="px-4 py-2 rounded-lg text-xs text-slate-500 hover:text-slate-700">{zh('取消', 'Cancel')}</button>
+                <button onClick={handleSaveCollection} disabled={busy}
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold disabled:opacity-50">
+                  {busy ? zh('保存中…', 'Saving…') : zh('保存合集信息', 'Save')}
+                </button>
+              </div>
+            </div>
+          )}
           {manageId && (
             <div className="space-y-2">
               {manageNotes.length === 0 && <p className="text-slate-400 text-sm">（{zh('无语录', 'no notes')}）</p>}
-              {manageNotes.map((n) => (
-                <div key={n.id}
-                  className="flex items-start justify-between gap-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg">
-                  <div className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{n.content}</div>
-                  <button onClick={() => handleDeleteNote(n.id)}
-                    className="text-red-500 hover:text-red-700 text-xs flex-shrink-0">{zh('删除', 'Delete')}</button>
-                </div>
-              ))}
+              {manageNotes.map((n) =>
+                editingNoteId === n.id ? (
+                  <div key={n.id} className="bg-blue-50/50 dark:bg-slate-900/60 border border-blue-100 dark:border-slate-700 rounded-lg p-3">
+                    <input className={inputCls + ' w-full mb-2 font-mono text-xs'} value={noteForm.timestamp}
+                      onChange={(e) => setNoteForm({ ...noteForm, timestamp: e.target.value })}
+                      placeholder="2024-01-01 10:00:00" />
+                    <textarea className={inputCls + ' w-full font-mono'} rows={Math.min(10, Math.max(3, noteForm.content.split('\n').length + 1))}
+                      value={noteForm.content}
+                      onChange={(e) => setNoteForm({ ...noteForm, content: e.target.value })} />
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      {zh('正文尾部的 #标签 与「——出处」行会被自动识别提取。', 'Trailing #tags and —source lines are auto-detected.')}
+                    </p>
+                    <div className="flex justify-end gap-2 mt-2">
+                      <button onClick={() => setEditingNoteId('')}
+                        className="px-3 py-1.5 rounded-lg text-xs text-slate-500 hover:text-slate-700">{zh('取消', 'Cancel')}</button>
+                      <button onClick={handleSaveNote} disabled={busy}
+                        className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold disabled:opacity-50">
+                        {busy ? zh('保存中…', 'Saving…') : zh('保存语录', 'Save')}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div key={n.id}
+                    className="flex items-start justify-between gap-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg">
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-mono text-slate-400 mb-0.5">{n.timestamp}</div>
+                      <div className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{n.content}</div>
+                      {(n.source || (n.tags && n.tags.length > 0)) && (
+                        <div className="text-[10px] text-slate-400 mt-1">
+                          {n.source && <span>——{n.source}</span>}
+                          {n.tags && n.tags.length > 0 && <span className="ml-2">{n.tags.map((t) => '#' + t).join(' ')}</span>}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1 flex-shrink-0">
+                      <button onClick={() => (editingNoteId === n.id ? setEditingNoteId('') : startEditNote(n))}
+                        className="text-blue-500 hover:text-blue-700 text-xs">{zh('编辑', 'Edit')}</button>
+                      <button onClick={() => handleDeleteNote(n.id)}
+                        className="text-red-500 hover:text-red-700 text-xs">{zh('删除', 'Delete')}</button>
+                    </div>
+                  </div>
+                )
+              )}
             </div>
           )}
         </div>

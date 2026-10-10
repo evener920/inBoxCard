@@ -45,19 +45,11 @@ export function parseTimestampNotes(text: string): ApiNote[] {
     const endIndex = i < matches.length - 1 ? (matches[i + 1].index as number) : text.length;
     let rawContent = text.substring(startIndex, endIndex).trim();
 
-    // 1. Tags
-    let tags: string[] = [];
-    const tagRegex = /(#[\p{L}\p{N}_\/-]+(\s+|$))+$/u;
-    const tagMatch = rawContent.match(tagRegex);
-    if (tagMatch) {
-      const tagString = tagMatch[0];
-      rawContent = rawContent.substring(0, tagMatch.index as number).trim();
-      tags = tagString.split(/\s+/).filter((t) => t.startsWith('#')).map((t) => t.slice(1));
-    }
-
-    // 2. Source line (—— / -- / —)
+    // 1. Source line first (—— / -- / —) — must run before tag extraction,
+    //    because the tag regex is anchored to end-of-string and would fail
+    //    if a source line trails the tags.
     let source: string | undefined = undefined;
-    const lines = rawContent.split('\n').filter((line) => line.trim() !== '');
+    let lines = rawContent.split('\n').filter((line) => line.trim() !== '');
     if (lines.length > 0) {
       const lastLine = lines[lines.length - 1].trim();
       const sourceRegex = /^\s*(?:——|--|—)\s*(.+)$/;
@@ -67,6 +59,16 @@ export function parseTimestampNotes(text: string): ApiNote[] {
         lines.pop();
         rawContent = lines.join('\n').trim();
       }
+    }
+
+    // 2. Tags
+    let tags: string[] = [];
+    const tagRegex = /(#[\p{L}\p{N}_\/-]+(\s+|$))+$/u;
+    const tagMatch = rawContent.match(tagRegex);
+    if (tagMatch) {
+      const tagString = tagMatch[0];
+      rawContent = rawContent.substring(0, tagMatch.index as number).trim();
+      tags = tagString.split(/\s+/).filter((t) => t.startsWith('#')).map((t) => t.slice(1));
     }
 
     notes.push({

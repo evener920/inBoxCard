@@ -83,3 +83,12 @@ export const adminDeleteCollection = (id: string, key: string) =>
 
 export const adminDeleteNote = (noteId: string, key: string) =>
   getJSON(`/api/notes/${noteId}`, { method: 'DELETE', headers: { 'x-admin-key': key } });
+
+export const adminUpdateNote = (
+  noteId: string,
+  payload: { content?: string; timestamp?: string; tags?: string[]; source?: string },
+  key: string
+) => getJSON(`/api/notes/${noteId}`, { method: 'PUT', headers: adminHeaders(key), body: JSON.stringify(payload) });
+
+export const adminUpdateCollection = (id: string, payload: any, key: string) =>
+  getJSON(`/api/collections/${id}`, { method: 'PUT', headers: adminHeaders(key), body: JSON.stringify(payload) });
