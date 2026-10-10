@@ -1,0 +1,13 @@
+name = "inboxcard"
+pages_build_output_dir = "dist"
+account_id = "82129ffe005dfd5010505adf73de06cb"
+compatibility_date = "2024-09-23"
+
+# 本地开发用：`wrangler pages dev` 会读取此 binding。
+# 生产环境（Git 连线部署）请在 Cloudflare 控制台
+#   Workers & Pages → inboxcard → Settings → Functions → D1 bindings
+# 添加绑定：变量名 DB，选择 inboxcard 数据库。
+[[d1_databases]]
+binding = "DB"
+database_name = "inboxcard"
+database_id = "REPLACE_WITH_YOUR_D1_ID"

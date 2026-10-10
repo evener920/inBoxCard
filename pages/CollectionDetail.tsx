@@ -1,12 +1,20 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { COLLECTIONS } from '../data';
 import { useApp } from '../context';
 import { ICONS } from '../constants';
 import { Card } from '../components/Card';
 import { Note } from '../types';
-import { parseTimestampNotes } from '../utils/parser';
-import { loadNoteContent } from '../utils/loader';
+import { ApiCollection, fetchCollection } from '../services/cardService';
+
+const notesToRaw = (notes: Note[]): string =>
+  notes
+    .map((n) => {
+      let s = `${n.timestamp}\n${n.content}`;
+      if (n.tags && n.tags.length) s += '\n' + n.tags.map((t) => '#' + t).join(' ');
+      if (n.source) s += '\n——' + n.source;
+      return s;
+    })
+    .join('\n\n');
 
 export const CollectionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,41 +24,53 @@ export const CollectionDetail: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]);
   const [rawContent, setRawContent] = useState<string>('');
+  const [collection, setCollection] = useState<ApiCollection | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const collection = useMemo(() => COLLECTIONS.find(c => c.id === id), [id]);
-
-  // Scroll to top when entering the collection detail page
   useEffect(() => {
     const mainElement = document.querySelector('main');
-    if (mainElement) {
-      mainElement.scrollTop = 0;
-    }
-    // Also try window scroll for mobile browsers address bar interactions
+    if (mainElement) mainElement.scrollTop = 0;
     window.scrollTo(0, 0);
   }, [id]);
 
   useEffect(() => {
-    if (collection) {
-      setLoading(true);
-      loadNoteContent(collection.filePath)
-        .then(text => {
-          setRawContent(text);
-          const parsedNotes = parseTimestampNotes(text);
-          setNotes(parsedNotes);
-          setLoading(false);
-        })
-        .catch(err => {
-          console.error(err);
-          setError(language === 'zh' ? '加载笔记失败，请确保文件存在。' : 'Failed to load notes. File might be missing.');
-          setLoading(false);
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    fetchCollection(id)
+      .then((data) => {
+        setCollection({
+          id: data.id,
+          name: data.name,
+          nameEn: data.nameEn,
+          description: data.description,
+          category: data.category,
+          author: data.author,
+          coverColor: data.coverColor,
+          count: data.count
         });
-    }
-  }, [collection, language]);
+        const ns: Note[] = data.notes || [];
+        setNotes(ns);
+        setRawContent(notesToRaw(ns));
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError(language === 'zh' ? '加载失败。' : 'Failed to load.');
+        setLoading(false);
+      });
+  }, [id, language]);
 
-  if (!collection) {
-    return <div className="p-10 text-center text-slate-500">Collection not found</div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+  if (error || !collection) {
+    return <div className="p-10 text-center text-slate-500">{error || 'Collection not found'}</div>;
   }
 
   const handleCopy = () => {
@@ -61,8 +81,8 @@ export const CollectionDetail: React.FC = () => {
   };
 
   const handleDownload = () => {
-    const element = document.createElement("a");
-    const file = new Blob([rawContent], {type: 'text/plain'});
+    const element = document.createElement('a');
+    const file = new Blob([rawContent], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
     element.download = `${collection.id}.txt`;
     document.body.appendChild(element);
@@ -75,7 +95,7 @@ export const CollectionDetail: React.FC = () => {
       {/* Header - Sticky & Hover Interaction */}
       <div className="sticky top-0 z-10 -mt-6 pt-6 pb-4 -mx-6 px-6 mb-6 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 transition-all shadow-sm group/header">
         <div className="flex items-center justify-between gap-2 md:gap-4 max-w-5xl mx-auto">
-          <button 
+          <button
             onClick={() => navigate('/')}
             className="flex items-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all gap-1.5 md:gap-2 px-2 md:px-3 py-2 -ml-2 md:-ml-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex-shrink-0"
             title={language === 'zh' ? '返回首页' : 'Back to Home'}
@@ -89,8 +109,8 @@ export const CollectionDetail: React.FC = () => {
               onClick={() => setViewMode('cards')}
               aria-pressed={viewMode === 'cards'}
               className={`px-3 md:px-4 py-1.5 rounded-md text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 md:gap-2 ${
-                viewMode === 'cards' 
-                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
+                viewMode === 'cards'
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
@@ -101,8 +121,8 @@ export const CollectionDetail: React.FC = () => {
               onClick={() => setViewMode('raw')}
               aria-pressed={viewMode === 'raw'}
               className={`px-3 md:px-4 py-1.5 rounded-md text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 md:gap-2 ${
-                viewMode === 'raw' 
-                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
+                viewMode === 'raw'
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
@@ -121,23 +141,15 @@ export const CollectionDetail: React.FC = () => {
           {collection.description}
         </p>
         <p className="text-xs font-mono text-slate-400 mt-2 bg-slate-100 dark:bg-slate-800/50 inline-block px-2 py-1 rounded">
-          Source: {collection.filePath}
+          Source: {collection.id}
         </p>
       </div>
 
       {/* Content */}
-      {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        </div>
-      ) : error ? (
-        <div className="text-center py-20 bg-red-50 dark:bg-red-900/10 rounded-xl text-red-500">
-          {error}
-        </div>
-      ) : viewMode === 'cards' ? (
+      {viewMode === 'cards' ? (
         notes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fadeIn">
-            {notes.map(note => (
+            {notes.map((note) => (
               <Card key={note.id} note={note} />
             ))}
           </div>
@@ -148,23 +160,23 @@ export const CollectionDetail: React.FC = () => {
         <div className="flex flex-col gap-6 animate-fadeIn">
           {/* Import Instruction Card */}
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-xl p-5 flex flex-col sm:flex-row gap-4">
-             <div className="flex-shrink-0">
-               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-300">
-                 <ICONS.Info size={20} />
-               </div>
-             </div>
-             <div className="flex-1">
-               <h3 className="font-bold text-slate-800 dark:text-blue-200 mb-2 text-sm sm:text-base">
-                 {language === 'zh' ? '如何使用源码导入？' : 'How to import raw source?'}
-               </h3>
-               <p className="text-sm text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">
-                 {language === 'zh' 
-                   ? '这段内容采用“时间戳笔记”格式。复制下方内容后，打开 inBox App 首页右上角菜单，选择「导入笔记」-「时间戳笔记」，App 将自动识别并将其拆分为多张独立的卡片笔记。' 
-                   : 'This content uses the "Timestamp Note" format. Copy the content below, open the inBox App menu, select "Import Notes" -> "Timestamp Note". The app will automatically parse and create multiple card notes for you.'}
-               </p>
-              <a 
-                href="https://doc.gudong.site/inbox/time_note.html" 
-                target="_blank" 
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-300">
+                <ICONS.Info size={20} />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-slate-800 dark:text-blue-200 mb-2 text-sm sm:text-base">
+                {language === 'zh' ? '如何使用源码导入？' : 'How to import raw source?'}
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">
+                {language === 'zh'
+                  ? '这段内容采用“时间戳笔记”格式。复制下方内容后，打开 inBox App 首页右上角菜单，选择「导入笔记」-「时间戳笔记」，App 将自动识别并将其拆分为多张独立的卡片笔记。'
+                  : 'This content uses the "Timestamp Note" format. Copy the content below, open the inBox App menu, select "Import Notes" -> "Timestamp Note". The app will automatically parse and create multiple card notes for you.'}
+              </p>
+              <a
+                href="https://doc.gudong.site/inbox/time_note.html"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline animate-pulse-slow"
               >
@@ -180,7 +192,7 @@ export const CollectionDetail: React.FC = () => {
                   <ICONS.Info size={12} />
                 </a>
               </div>
-             </div>
+            </div>
           </div>
 
           {/* Code Editor */}
@@ -192,7 +204,7 @@ export const CollectionDetail: React.FC = () => {
                 <div className="w-3 h-3 rounded-full bg-green-500/50" />
               </div>
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={handleDownload}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded transition-colors"
                   title="Download .txt"
@@ -200,7 +212,7 @@ export const CollectionDetail: React.FC = () => {
                   <ICONS.Download size={14} />
                   <span>.txt</span>
                 </button>
-                <button 
+                <button
                   onClick={handleCopy}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded font-medium transition-colors"
                 >

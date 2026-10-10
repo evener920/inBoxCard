@@ -6,6 +6,7 @@ import { CollectionDetail } from './pages/CollectionDetail';
 import { Contribute } from './pages/Contribute';
 import { RandomReview } from './pages/RandomReview';
 import { Developer } from './pages/Developer';
+import { Admin } from './pages/Admin';
 import { AppProvider, useApp } from './context';
 import { CategoryId } from './types';
 import { ICONS } from './constants';
@@ -154,6 +155,7 @@ const MainLayout: React.FC = () => {
             <Route path="/contribute" element={<Contribute />} />
             <Route path="/review" element={<RandomReview />} />
             <Route path="/developer" element={<Developer />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

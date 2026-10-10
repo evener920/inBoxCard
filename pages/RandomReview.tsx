@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context';
-import { COLLECTIONS } from '../data';
-import { Note, Collection } from '../types';
-import { loadNoteContent } from '../utils/loader';
-import { parseTimestampNotes } from '../utils/parser';
+import { Note } from '../types';
+import { ApiCollection, fetchRandomNote } from '../services/cardService';
 import { ICONS } from '../constants';
 import { QRCodeSVG } from 'qrcode.react';
 import html2canvas from 'html2canvas';
@@ -25,7 +23,7 @@ export const RandomReview: React.FC = () => {
   const { language } = useApp();
   const navigate = useNavigate();
   const [currentNote, setCurrentNote] = useState<Note | null>(null);
-  const [sourceCollection, setSourceCollection] = useState<Collection | null>(null);
+  const [sourceCollection, setSourceCollection] = useState<ApiCollection | null>(null);
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   
@@ -42,41 +40,17 @@ export const RandomReview: React.FC = () => {
     return source.replace(/^[—\-\s]+/, '');
   };
 
-  // Core logic to pick a random note
-  const pickRandomNote = useCallback(async (retryCount = 0) => {
-    if (retryCount > 3) {
-      setLoading(false);
-      return;
-    }
-
+  // Core logic to pick a random note (server picks across all notes)
+  const pickRandomNote = useCallback(async () => {
     setLoading(true);
-    
     try {
-      if (COLLECTIONS.length === 0) throw new Error("No collections available");
-      
-      const randomCollectionIndex = Math.floor(Math.random() * COLLECTIONS.length);
-      const randomCollection = COLLECTIONS[randomCollectionIndex];
-      
-      const content = await loadNoteContent(randomCollection.filePath);
-      const notes = parseTimestampNotes(content);
-      
-      if (notes.length > 0) {
-        const randomNoteIndex = Math.floor(Math.random() * notes.length);
-        
-        // Artificial delay for UX smoothness
-        if (retryCount === 0) {
-           await new Promise(resolve => setTimeout(resolve, 300));
-        }
-
-        setCurrentNote(notes[randomNoteIndex]);
-        setSourceCollection(randomCollection);
-        setLoading(false);
-      } else {
-        pickRandomNote(retryCount + 1);
-      }
+      const { note, collection } = await fetchRandomNote();
+      setCurrentNote(note);
+      setSourceCollection(collection);
+      setLoading(false);
     } catch (e) {
-      console.error("Failed to pick random note", e);
-      pickRandomNote(retryCount + 1);
+      console.error('Failed to pick random note', e);
+      setLoading(false);
     }
   }, []);
 
@@ -146,7 +120,7 @@ export const RandomReview: React.FC = () => {
 
   // Dynamic Background Color based on collection
   const glowColorClass = sourceCollection ? sourceCollection.coverColor : 'bg-blue-500';
-  const shareUrl = "https://card.gudong.site/#/review";
+  const shareUrl = window.location.origin + '/#/review';
   const scanText = language === 'zh' ? '扫码阅读更多' : 'Scan to read more';
 
   return (
@@ -432,7 +406,7 @@ export const RandomReview: React.FC = () => {
         )}
 
         <button
-          onClick={() => pickRandomNote(0)}
+          onClick={() => pickRandomNote()}
           disabled={loading}
           className="flex items-center gap-3 px-8 py-4 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-lg shadow-xl shadow-slate-900/20 dark:shadow-white/10 hover:shadow-2xl hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
         >

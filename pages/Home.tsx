@@ -1,12 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../context';
-import { COLLECTIONS } from '../data';
 import { CategoryId, Note } from '../types';
 import { ICONS } from '../constants';
 import { useNavigate } from 'react-router-dom';
-import { parseTimestampNotes } from '../utils/parser';
 import { Card } from '../components/Card';
-import { loadNoteContent } from '../utils/loader';
+import { ApiCollection, fetchCollections, fetchNotes } from '../services/cardService';
 
 interface HomeProps {
   selectedCategory: CategoryId | 'all';
@@ -22,12 +20,22 @@ export const Home: React.FC<HomeProps> = ({ selectedCategory }) => {
   const navigate = useNavigate();
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [collections, setCollections] = useState<ApiCollection[]>([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(true);
+
+  // Load collections from API (D1-backed)
+  useEffect(() => {
+    fetchCollections()
+      .then(setCollections)
+      .catch((e) => console.error('load collections failed', e))
+      .finally(() => setCollectionsLoading(false));
+  }, []);
 
   // Filter collections for the grid view
   const filteredCollections = useMemo(() => {
     if (searchQuery.trim()) return []; // Use search results view instead
     
-    let result = COLLECTIONS;
+    let result = collections;
     if (selectedCategory !== 'all') {
       result = result.filter(c => c.category === selectedCategory);
     }
@@ -50,10 +58,9 @@ export const Home: React.FC<HomeProps> = ({ selectedCategory }) => {
     const timeoutId = setTimeout(() => {
       let cancelled = false;
       Promise.all(
-        COLLECTIONS.map(async (col) => {
+        collections.map(async (col) => {
           try {
-            const content = await loadNoteContent(col.filePath);
-            const notes = parseTimestampNotes(content);
+            const notes = await fetchNotes(col.id);
             notes.forEach(note => {
               if (
                 note.content.toLowerCase().includes(query) ||
@@ -191,7 +198,11 @@ export const Home: React.FC<HomeProps> = ({ selectedCategory }) => {
         </div>
       )}
 
-      {filteredCollections.length > 0 ? (
+      {collectionsLoading ? (
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      ) : (filteredCollections.length > 0 ? (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredCollections.map(collection => (
@@ -269,7 +280,7 @@ export const Home: React.FC<HomeProps> = ({ selectedCategory }) => {
         <div className="text-center py-20 text-slate-400">
           <p>{language === 'zh' ? '没有找到相关分类' : 'No collections found'}</p>
         </div>
-      )}
+      ))}
     </div>
   );
 };
