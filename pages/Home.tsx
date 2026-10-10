@@ -158,48 +158,41 @@ export const Home: React.FC<HomeProps> = ({ selectedCategory }) => {
           {language === 'zh' ? '发现知识' : 'Discover Knowledge'}
         </h2>
         <p className="text-slate-500 dark:text-slate-400 text-lg">
-          {language === 'zh' 
-            ? '探索精粹，一键收纳。' 
+          {language === 'zh'
+            ? '探索精粹，一键收纳。'
             : 'Curated knowledge, instantly captured.'}
         </p>
-        <div className="mt-3">
-          <button
-            onClick={() => navigate('/contribute')}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
-          >
-            {language === 'zh' ? '想贡献卡片？查看贡献指南' : 'Want to contribute? See the guide'}
-            <ICONS.ExternalLink size={12} />
-          </button>
-        </div>
       </div>
 
-      {/* FEATURE: Serendipity Entry Banner (Top) */}
+      {/* FEATURE: Serendipity Entry Banner (Top, compact) */}
       {!searchQuery && selectedCategory === 'all' && (
-        <div 
+        <div
           onClick={() => navigate('/review')}
-          className="mb-10 relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 p-6 md:p-8 text-white shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all duration-300 cursor-pointer group"
+          className="mb-6 relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-600 to-purple-700 px-5 py-4 text-white shadow-md hover:shadow-lg hover:scale-[1.005] transition-all duration-300 cursor-pointer group"
         >
           {/* Background Decor */}
-          <div className="absolute -right-10 -bottom-10 text-white/10 group-hover:text-white/20 transition-colors duration-500 rotate-12">
-            <ICONS.Sparkles size={180} strokeWidth={1} />
+          <div className="absolute -right-6 -bottom-8 text-white/10 group-hover:text-white/20 transition-colors duration-500 rotate-12">
+            <ICONS.Sparkles size={96} strokeWidth={1} />
           </div>
-          
-          <div className="relative z-10 max-w-xl">
-            <div className="flex items-center gap-2 mb-2 text-indigo-100 font-medium text-sm uppercase tracking-wider">
-              <ICONS.Dices size={16} />
-              <span>{language === 'zh' ? '特色功能' : 'Featured'}</span>
+
+          <div className="relative z-10 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 mb-1 text-indigo-100 font-medium text-[11px] uppercase tracking-wider">
+                <ICONS.Dices size={12} />
+                <span>{language === 'zh' ? '特色功能' : 'Featured'}</span>
+              </div>
+              <h3 className="text-base md:text-lg font-bold leading-tight mb-1">
+                {language === 'zh' ? '随机漫步：与智慧不期而遇' : 'Serendipity: Stumble Upon Wisdom'}
+              </h3>
+              <p className="text-indigo-100/90 text-xs md:text-sm leading-snug max-w-lg truncate md:text-ellipsis">
+                {language === 'zh'
+                  ? '打破信息的茧房。随机抽取一张大师的智慧卡片，寻找当下的灵感与共鸣。'
+                  : 'Break the echo chamber. Draw a random card of wisdom.'}
+              </p>
             </div>
-            <h3 className="text-2xl md:text-3xl font-bold mb-3 leading-tight">
-              {language === 'zh' ? '随机漫步：与智慧不期而遇' : 'Serendipity: Stumble Upon Wisdom'}
-            </h3>
-            <p className="text-indigo-100/90 text-sm md:text-base mb-6 leading-relaxed max-w-lg">
-              {language === 'zh' 
-                ? '打破信息的茧房。点击这里，随机抽取一张大师的智慧卡片，寻找当下的灵感与共鸣。'
-                : 'Break the echo chamber. Click here to draw a random card of wisdom and find inspiration for the moment.'}
-            </p>
-            <button className="bg-white text-indigo-700 hover:bg-indigo-50 px-5 py-2.5 rounded-full text-sm font-bold inline-flex items-center gap-2 transition-colors shadow-md">
+            <button className="flex-shrink-0 bg-white text-indigo-700 hover:bg-indigo-50 px-4 py-2 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-colors shadow-md">
               {language === 'zh' ? '开始漫步' : 'Start Shuffling'}
-              <ICONS.ArrowLeft className="rotate-180" size={16} />
+              <ICONS.ArrowLeft className="rotate-180" size={14} />
             </button>
           </div>
         </div>
