@@ -1,4 +1,4 @@
-import { json, requireAdmin, parseTags } from '../../lib';
+import { json, requireAdmin, parseTags } from '../lib';
 
 const COLS = `id, name, name_en as nameEn, description, category, author, cover_color as coverColor, count`;
 

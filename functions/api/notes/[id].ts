@@ -1,4 +1,4 @@
-import { json, requireAdmin } from '../../lib';
+import { json, requireAdmin } from '../lib';
 
 export async function onRequestDelete(context: any): Promise<Response> {
   const { params, request, env } = context;

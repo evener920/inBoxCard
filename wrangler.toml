@@ -1,6 +1,5 @@
 name = "inboxcard"
 pages_build_output_dir = "dist"
-account_id = "82129ffe005dfd5010505adf73de06cb"
 compatibility_date = "2024-09-23"
 
 # 本地开发用：`wrangler pages dev` 会读取此 binding。
@@ -10,4 +9,4 @@ compatibility_date = "2024-09-23"
 [[d1_databases]]
 binding = "DB"
 database_name = "inboxcard"
-database_id = "REPLACE_WITH_YOUR_D1_ID"
+database_id = "37b26c73-8c40-405e-84d8-60b5c22aa415"
