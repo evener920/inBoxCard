@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useRef } from 'react';
+import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Home } from './pages/Home';
 import { CollectionDetail } from './pages/CollectionDetail';
@@ -14,16 +14,12 @@ const MainLayout: React.FC = () => {
   const { theme, toggleTheme, language, setLanguage, searchQuery, setSearchQuery } = useApp();
   const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showHeader, setShowHeader] = useState(true);
 
   const navigate = useNavigate();
-  const location = useLocation();
   const mainRef = useRef<HTMLDivElement>(null);
-  const lastScrollY = useRef(0);
 
-  // 仅首页保留「下滑隐藏顶栏」：其他页面（合集详情等）有 sticky 工具栏，
-  // 顶栏收起会改变 main 高度，导致 sticky 栏弹跳抖动，故这些页面顶栏恒定显示。
-  const autoHideHeader = location.pathname === '/';
+  // 顶栏恒定显示，不做「下滑隐藏」：隐藏用负 margin 会改变内容区高度，
+  // 滚动时页面整体上下跳（抖动）。任何页面都不再收起顶栏。
 
   // Unified handler for sidebar navigation
   const handleCategorySelect = (id: string | 'all') => {
@@ -36,46 +32,6 @@ const MainLayout: React.FC = () => {
       mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
-
-  // Scroll detection logic
-  useEffect(() => {
-    const mainElement = mainRef.current;
-    if (!mainElement) return;
-
-    const handleScroll = () => {
-      const currentScrollY = mainElement.scrollTop;
-      const scrollDiff = currentScrollY - lastScrollY.current;
-
-      if (!autoHideHeader) {
-        setShowHeader(true);
-        lastScrollY.current = currentScrollY;
-        return;
-      }
-
-      // Logic:
-      // 1. If at the very top, always show header.
-      // 2. If scrolling down (diff > 0) and moved a bit (> 10px), hide header.
-      // 3. If scrolling up (diff < 0), show header.
-
-      if (currentScrollY < 10) {
-        setShowHeader(true);
-      } else if (scrollDiff > 10) {
-        setShowHeader(false);
-      } else if (scrollDiff < -10) {
-        setShowHeader(true);
-      }
-
-      lastScrollY.current = currentScrollY;
-    };
-
-    mainElement.addEventListener('scroll', handleScroll, { passive: true });
-    return () => mainElement.removeEventListener('scroll', handleScroll);
-  }, [autoHideHeader]);
-
-  // 路由切换时确保顶栏恢复显示
-  useEffect(() => {
-    setShowHeader(true);
-  }, [location.pathname]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200">
@@ -92,11 +48,8 @@ const MainLayout: React.FC = () => {
       <div className="flex-1 flex flex-col w-full md:ml-0 transition-all h-full relative">
         
         {/* Mobile Header / Toolbar */}
-        {/* Added transition-all and negative margin logic for hiding */}
-        <header 
-          className={`flex-shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between z-20 transition-all duration-300 ease-in-out ${
-            showHeader ? 'translate-y-0 opacity-100 mt-0' : '-translate-y-full opacity-0 -mt-20 pointer-events-none'
-          }`}
+        <header
+          className="flex-shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between z-20"
         >
           <div className="flex items-center gap-4">
              <button 
