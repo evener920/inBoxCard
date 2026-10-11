@@ -5,7 +5,6 @@ import { Home } from './pages/Home';
 import { CollectionDetail } from './pages/CollectionDetail';
 import { Contribute } from './pages/Contribute';
 import { RandomReview } from './pages/RandomReview';
-import { Developer } from './pages/Developer';
 import { Admin } from './pages/Admin';
 import { Favorites } from './pages/Favorites';
 import { AppProvider, useApp } from './context';
@@ -111,7 +110,6 @@ const MainLayout: React.FC = () => {
             <Route path="/collection/:id" element={<CollectionDetail />} />
             <Route path="/contribute" element={<Contribute />} />
             <Route path="/review" element={<RandomReview />} />
-            <Route path="/developer" element={<Developer />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="*" element={<Navigate to="/" replace />} />

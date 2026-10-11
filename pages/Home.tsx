@@ -237,44 +237,6 @@ export const Home: React.FC<HomeProps> = ({ selectedCategory }) => {
               </div>
             ))}
           </div>
-
-          {/* FEATURE: Developer API Entry (Bottom) */}
-          {selectedCategory === 'all' && (
-            <div className="mt-12 border-t border-slate-100 dark:border-slate-800 pt-8 animate-fadeIn">
-              <div 
-                onClick={() => navigate('/developer')}
-                className="relative overflow-hidden rounded-xl bg-slate-900 dark:bg-slate-800 border border-slate-800 dark:border-slate-700 p-6 md:p-8 cursor-pointer group hover:border-blue-500/50 transition-all"
-              >
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <ICONS.Terminal size={120} />
-                </div>
-                <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500 text-white uppercase tracking-wider">
-                        GET
-                      </span>
-                      <code className="text-sm font-mono text-blue-400">/api/random-note</code>
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">
-                      {language === 'zh' ? '开发者接口' : 'For Developers'}
-                    </h3>
-                    <p className="text-slate-400 text-sm max-w-lg">
-                      {language === 'zh' 
-                        ? '想在你的博客或 App 中展示随机名言？接入我们的开放 API，无需鉴权，完全免费。'
-                        : 'Want to display random wisdom on your blog or app? Connect to our Open API. Free & No Auth.'}
-                    </p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <button className="bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
-                      {language === 'zh' ? '查看文档' : 'View Docs'}
-                      <ICONS.ArrowLeft className="rotate-180" size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </>
       ) : (
         <div className="text-center py-20 text-slate-400">
