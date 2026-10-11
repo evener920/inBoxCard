@@ -323,16 +323,29 @@ export const Admin: React.FC = () => {
     setBusy(false);
   };
 
-  const handleDeleteCategory = async (id: string) => {
+  const handleDeleteCategory = async (id: string, force = false) => {
     if (!ensureKey()) return;
-    if (!confirm(zh(`确认删除分类 ${id}？`, `Delete category ${id}?`))) return;
+    if (!force && !confirm(zh(`确认删除分类 ${id}？`, `Delete category ${id}?`))) return;
     setBusy(true);
     try {
-      await adminDeleteCategory(id, key);
+      await adminDeleteCategory(id, key, force);
       if (more.category === id) setMore((m) => ({ ...m, category: cats.find((c) => c.id !== id)?.id || '' }));
       await loadCats();
     } catch (e: any) {
-      setError(zh('删除分类失败: ', 'Delete category failed: ') + (e.message || e));
+      const msg = String(e.message || e);
+      const m = msg.match(/仍有 (\d+) 个合集/);
+      if (m) {
+        const n = m[1];
+        if (confirm(zh(
+          `该分类下有 ${n} 个合集，其下所有卡片将一并删除，确认全部删除？`,
+          `This category has ${n} collections. All their notes will be deleted too. Continue?`
+        ))) {
+          setBusy(false);
+          return handleDeleteCategory(id, true);
+        }
+      } else {
+        setError(zh('删除分类失败: ', 'Delete category failed: ') + msg);
+      }
     }
     setBusy(false);
   };
@@ -506,7 +519,7 @@ export const Admin: React.FC = () => {
             </button>
           </div>
           <p className="text-xs text-slate-400 mt-3">
-            {zh('删除分类前需先删除或移动使用它的合集；新分类会立即出现在侧栏。', 'A category in use cannot be deleted. New categories appear in the sidebar immediately.')}
+            {zh('删除分类时其下合集与卡片会一并删除（需二次确认）；新分类会立即出现在侧栏。', 'Deleting a category also deletes its collections and notes (with confirmation). New categories appear in the sidebar immediately.')}
           </p>
         </div>
       </details>

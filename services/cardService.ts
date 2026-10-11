@@ -45,8 +45,8 @@ export const adminCreateCategory = (
   key: string
 ) => getJSON('/api/categories', { method: 'POST', headers: adminHeaders(key), body: JSON.stringify(payload) });
 
-export const adminDeleteCategory = (id: string, key: string) =>
-  getJSON(`/api/categories/${id}`, { method: 'DELETE', headers: { 'x-admin-key': key } });
+export const adminDeleteCategory = (id: string, key: string, force = false) =>
+  getJSON(`/api/categories/${id}${force ? '?force=1' : ''}`, { method: 'DELETE', headers: { 'x-admin-key': key } });
 
 export const fetchCollections = (): Promise<ApiCollection[]> => getJSON('/api/collections');
 
