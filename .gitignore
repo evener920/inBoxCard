@@ -20,3 +20,7 @@ tmp/
 temp/
 package-lock.json.playwright-cli/
 .playwright-cli/
+
+# local dev state
+.wrangler/
+.workbuddy_memory_note
