@@ -5,6 +5,7 @@ export interface Note {
   tags?: string[];
   translation?: string; // For bilingual support (parsed from content if available)
   source?: string; // New field for the origin/author/citation
+  collectionId?: string; // Which collection this note belongs to (for move handling)
 }
 
 export interface Collection {

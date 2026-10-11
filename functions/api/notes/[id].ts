@@ -19,48 +19,79 @@ export async function onRequestPut(context: any): Promise<Response> {
   let content = typeof body.content === 'string' ? body.content.trim() : '';
   if (!content) return json({ error: 'content required' }, 400);
 
-  let tags: string[] = Array.isArray(body.tags) ? body.tags.map(String) : [];
+  // 移动合集：target collection 必须存在
+  let newCollectionId: string = note.collection_id;
+  const bodyCol = typeof body.collection_id === 'string' ? body.collection_id.trim() : '';
+  if (bodyCol && bodyCol !== note.collection_id) {
+    const c = await env.DB.prepare('SELECT id FROM collections WHERE id = ?').bind(bodyCol).first();
+    if (!c) return json({ error: 'target collection not found' }, 400);
+    newCollectionId = bodyCol;
+  }
+  const moving = newCollectionId !== note.collection_id;
+
   let source: string = typeof body.source === 'string' ? body.source.trim() : '';
 
-  // 先提出处行、再提 #标签（标签正则锚定文末，必须最后处理才不受出处行干扰）
-  const lines = content.split('\n').filter((line: string) => line.trim() !== '');
-  if (lines.length > 0 && !source) {
-    const lastLine = lines[lines.length - 1].trim();
+  // 先提出处行（移动与否都要提取）—— 标签正则锚定文末，最后处理
+  const slines = content.split('\n').filter((line: string) => line.trim() !== '');
+  if (slines.length > 0 && !source) {
+    const lastLine = slines[slines.length - 1].trim();
     const sourceMatch = lastLine.match(/^\s*(?:——|--|—)\s*(.+)$/);
     if (sourceMatch) {
       source = sourceMatch[1].trim();
-      lines.pop();
-      content = lines.join('\n').trim();
+      slines.pop();
+      content = slines.join('\n').trim();
     }
   }
 
-  // 与导入规则一致：末行整体以 # 开头 → 整行按空白拆 token 为标签，
-  // 无 # 的 token 续接前一个标签（如「#诚实 ·诚信」→「诚实·诚信」，「#人 与 人」→「人与人」）；
-  // 否则仅提取末行行尾内联标签「正文 #标签」。
-  const contentLines = content.split('\n');
-  const lastLine = contentLines[contentLines.length - 1].trim();
-  if (lastLine.startsWith('#')) {
-    const parsed: string[] = [];
-    for (const tok of lastLine.split(/\s+/)) {
-      if (tok.startsWith('#')) {
-        const t = tok.slice(1);
-        if (t) parsed.push(t);
-      } else if (parsed.length) {
-        parsed[parsed.length - 1] += tok;
+  // 标签：非移动时从正文末行解析；移动时由 body.tags 提供（客户端已同步成目标合集名），并剥掉正文行尾 #标签
+  let tags: string[] = [];
+  const stripTagLine = () => {
+    const cl = content.split('\n');
+    const ll = cl[cl.length - 1].trim();
+    if (ll.startsWith('#')) {
+      cl.pop();
+      content = cl.join('\n').trim();
+    } else {
+      const m = ll.match(/^(.*?)(?:^|\s)#(\S+)\s*$/u);
+      if (m && m[1].trim()) {
+        cl[cl.length - 1] = m[1].trim();
+        content = cl.join('\n').trim();
       }
     }
-    if (parsed.length) {
-      tags = parsed;
-      contentLines.pop();
-      content = contentLines.join('\n').trim();
+  };
+  if (!moving) {
+    const contentLines = content.split('\n');
+    const lastLine = contentLines[contentLines.length - 1].trim();
+    if (lastLine.startsWith('#')) {
+      const parsed: string[] = [];
+      for (const tok of lastLine.split(/\s+/)) {
+        if (tok.startsWith('#')) {
+          const t = tok.slice(1);
+          if (t) parsed.push(t);
+        } else if (parsed.length) {
+          parsed[parsed.length - 1] += tok;
+        }
+      }
+      if (parsed.length) {
+        tags = parsed;
+        contentLines.pop();
+        content = contentLines.join('\n').trim();
+      }
+    } else {
+      const tMatch = lastLine.match(/^(.*?)(?:^|\s)#(\S+)\s*$/u);
+      if (tMatch && tMatch[1].trim()) {
+        tags = [tMatch[2]];
+        contentLines[contentLines.length - 1] = tMatch[1].trim();
+        content = contentLines.join('\n').trim();
+      }
     }
   } else {
-    const tMatch = lastLine.match(/^(.*?)(?:^|\s)#(\S+)\s*$/u);
-    if (tMatch && tMatch[1].trim()) {
-      tags = [tMatch[2]];
-      contentLines[contentLines.length - 1] = tMatch[1].trim();
-      content = contentLines.join('\n').trim();
+    tags = Array.isArray(body.tags) ? body.tags.map(String) : [];
+    if (tags.length === 0) {
+      const cur = await env.DB.prepare('SELECT tags FROM notes WHERE id = ?').bind(noteId).first();
+      tags = cur && cur.tags ? JSON.parse(cur.tags) : [];
     }
+    stripTagLine();
   }
 
   const timestamp =
@@ -72,14 +103,24 @@ export async function onRequestPut(context: any): Promise<Response> {
   }
 
   if (timestamp) {
-    await env.DB.prepare('UPDATE notes SET content = ?, tags = ?, source = ?, timestamp = ? WHERE id = ?')
-      .bind(content, JSON.stringify(tags), source, timestamp, noteId).run();
+    await env.DB.prepare('UPDATE notes SET content = ?, tags = ?, source = ?, timestamp = ?, collection_id = ? WHERE id = ?')
+      .bind(content, JSON.stringify(tags), source, timestamp, newCollectionId, noteId).run();
   } else {
-    await env.DB.prepare('UPDATE notes SET content = ?, tags = ?, source = ? WHERE id = ?')
-      .bind(content, JSON.stringify(tags), source, noteId).run();
+    await env.DB.prepare('UPDATE notes SET content = ?, tags = ?, source = ?, collection_id = ? WHERE id = ?')
+      .bind(content, JSON.stringify(tags), source, newCollectionId, noteId).run();
   }
 
-  return json({ ok: true, content, tags, source });
+  // 移动后同步两侧合集计数
+  if (moving) {
+    await env.DB.prepare(
+      'UPDATE collections SET count = (SELECT COUNT(*) FROM notes WHERE collection_id = ?) WHERE id = ?'
+    ).bind(note.collection_id, note.collection_id).run();
+    await env.DB.prepare(
+      'UPDATE collections SET count = (SELECT COUNT(*) FROM notes WHERE collection_id = ?) WHERE id = ?'
+    ).bind(newCollectionId, newCollectionId).run();
+  }
+
+  return json({ ok: true, content, tags, source, collection_id: newCollectionId });
 }
 
 export async function onRequestDelete(context: any): Promise<Response> {

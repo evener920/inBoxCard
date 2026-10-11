@@ -109,7 +109,7 @@ export const adminDeleteNote = (noteId: string, key: string) =>
 
 export const adminUpdateNote = (
   noteId: string,
-  payload: { content?: string; timestamp?: string; tags?: string[]; source?: string },
+  payload: { content?: string; timestamp?: string; tags?: string[]; source?: string; collection_id?: string },
   key: string
 ) => getJSON(`/api/notes/${noteId}`, { method: 'PUT', headers: adminHeaders(key), body: JSON.stringify(payload) });
 

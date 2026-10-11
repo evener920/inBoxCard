@@ -142,7 +142,8 @@ export const Slideshow: React.FC<SlideshowProps> = ({ notes, startIndex = 0, col
         content: res.content,
         tags: res.tags || [],
         source: res.source || '',
-        timestamp: noteForm.timestamp.trim() || note.timestamp
+        timestamp: noteForm.timestamp.trim() || note.timestamp,
+        collectionId: res.collection_id || collectionId
       };
       onNoteUpdated(updated);
       setEditing(false);

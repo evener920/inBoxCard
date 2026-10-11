@@ -3,7 +3,7 @@ import { Note } from '../types';
 import { useApp } from '../context';
 import { useNavigate } from 'react-router-dom';
 import { ICONS } from '../constants';
-import { adminUpdateNote } from '../services/cardService';
+import { adminUpdateNote, fetchCollections } from '../services/cardService';
 
 interface CardProps {
   note: Note;
@@ -23,6 +23,8 @@ export const Card: React.FC<CardProps> = ({ note, collectionName, collectionId, 
   const [keyDraft, setKeyDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [collections, setCollections] = useState<{ id: string; name: string }[]>([]);
+  const [targetCol, setTargetCol] = useState(collectionId || '');
 
   // Helper to clean up source string (remove leading dashes)
   const cleanSource = (source: string) => {
@@ -35,7 +37,11 @@ export const Card: React.FC<CardProps> = ({ note, collectionName, collectionId, 
     if (note.source) content += '\n——' + note.source;
     setForm(content);
     setMsg(null);
+    setTargetCol(collectionId || '');
     setEditing(true);
+    fetchCollections()
+      .then((cols) => setCollections(cols.map((c) => ({ id: c.id, name: c.name }))))
+      .catch(() => {});
   };
 
   const save = async () => {
@@ -55,12 +61,26 @@ export const Card: React.FC<CardProps> = ({ note, collectionName, collectionId, 
         setKey(keyDraft.trim());
         localStorage.setItem('inbox_admin_key', keyDraft.trim());
       }
-      const res: any = await adminUpdateNote(note.id, { content: form.trim() }, k);
+      const moving = !!targetCol && targetCol !== collectionId;
+      let payloadContent = form.trim();
+      let payload: any = { content: payloadContent };
+      if (moving) {
+        // 剥离正文行尾 #标签，标签由 body.tags 提供（已同步成目标合集名）
+        payloadContent = form.replace(/\n#[\s\S]*$/, '').trim();
+        const tName = collections.find((c) => c.id === targetCol)?.name;
+        payload = {
+          content: payloadContent,
+          collection_id: targetCol,
+          tags: tName ? [tName] : []
+        };
+      }
+      const res: any = await adminUpdateNote(note.id, payload, k);
       onNoteUpdated?.({
         ...note,
         content: res.content,
         tags: res.tags || [],
-        source: res.source || ''
+        source: res.source || '',
+        collectionId: res.collection_id
       });
       setEditing(false);
     } catch (err: any) {
@@ -90,6 +110,29 @@ export const Card: React.FC<CardProps> = ({ note, collectionName, collectionId, 
           value={form}
           onChange={(e) => setForm(e.target.value)}
         />
+        {collections.length > 1 && (
+          <label className="block mt-3">
+            <span className="text-[11px] font-bold text-slate-400">{zh('移入合集', 'Move to collection')}</span>
+            <select
+              value={targetCol}
+              onChange={(e) => setTargetCol(e.target.value)}
+              className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm outline-none focus:border-blue-500"
+            >
+              {collections
+                .slice()
+                .sort((a, b) => a.name.localeCompare(b.name, 'zh'))
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                    {c.id === collectionId ? ` (${zh('当前', 'current')})` : ''}
+                  </option>
+                ))}
+            </select>
+            <span className="text-[11px] text-slate-400 mt-1 block">
+              {zh('选择其他合集即把本卡移动过去，并自动把 #标签 改为该合集名。', 'Pick another collection to move this card; its #tag is auto-synced to the new name.')}
+            </span>
+          </label>
+        )}
         <p className="text-[11px] text-slate-400 mt-1.5">
           {zh('正文尾部 #标签 与「——出处」行会被自动识别提取。', 'Trailing #tags and —source lines are auto-detected.')}
         </p>
