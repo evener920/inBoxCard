@@ -16,9 +16,9 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'logo.svg'],
         manifest: {
-          name: 'inBox Card',
-          short_name: 'inBox',
-          description: 'A community-driven knowledge card repository.',
+          name: '知识收集',
+          short_name: '知识收集',
+          description: '个人知识卡片收藏馆：汇集大师智慧，随机漫步，与灵感不期而遇。',
           theme_color: '#ffffff',
           background_color: '#ffffff',
           display: 'standalone',

@@ -1,5 +1,5 @@
 {
-  "name": "inBox Card",
-  "description": "A community-driven knowledge card repository featuring timestamped notes compatible with inBox app. Includes curated wisdom from famous figures and supports bilingual display and night mode.",
+  "name": "知识收集",
+  "description": "个人知识卡片收藏馆：汇集大师智慧，支持双语展示与夜间模式。",
   "requestFramePermissions": []
 }

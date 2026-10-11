@@ -98,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
             onClick={() => { onSelectCategory('all'); onClose(); }}
           >
             <PineLogo size={32} className="flex-shrink-0" />
-            <h1 className="text-xl font-bold tracking-tight">inBox Card</h1>
+            <h1 className="text-xl font-bold tracking-tight">知识收集</h1>
           </div>
         </div>
 

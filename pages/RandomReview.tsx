@@ -184,7 +184,7 @@ export const RandomReview: React.FC = () => {
                    </div>
                    <div className="flex flex-col gap-1.5 justify-center">
                       <div className="flex items-center gap-2">
-                         <span className="text-2xl font-bold text-slate-800 tracking-tight">inBox Card</span>
+                         <span className="text-2xl font-bold text-slate-800 tracking-tight">知识收集</span>
                       </div>
                       <span className="text-sm text-slate-400 font-medium uppercase tracking-widest">{scanText}</span>
                    </div>

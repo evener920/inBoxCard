@@ -1,0 +1,269 @@
+- generic [ref=f3e3]:
+  - generic [ref=f3e4]:
+    - generic [ref=f3e6] [cursor=pointer]:
+      - img "inBox Logo" [ref=f3e7]
+      - heading "inBox Card" [level=1] [ref=f3e8]
+    - navigation [ref=f3e10]:
+      - button "全部精选" [ref=f3e11] [cursor=pointer]
+      - button "随机漫步" [ref=f3e16] [cursor=pointer]
+      - button "开放 API" [ref=f3e22] [cursor=pointer]
+      - button "录入后台" [ref=f3e28] [cursor=pointer]
+      - generic [ref=f3e34]:
+        - paragraph [ref=f3e35]: 分类
+        - button "商业巨擘" [ref=f3e36] [cursor=pointer]
+        - button "哲学思想" [ref=f3e41] [cursor=pointer]
+        - button "文学经典" [ref=f3e46] [cursor=pointer]
+        - button "历史智慧" [ref=f3e51] [cursor=pointer]
+        - button "网络技术" [ref=f3e103] [cursor=pointer]
+  - generic [ref=f3e58]:
+    - banner [ref=f3e59]:
+      - textbox "搜索笔记..." [ref=f3e65]
+      - generic [ref=f3e66]:
+        - button "随机漫步" [ref=f3e67] [cursor=pointer]
+        - link "inBox 笔记" [ref=f3e72] [cursor=pointer]:
+          - /url: https://doc.gudong.site/inbox/
+        - button "EN" [ref=f3e78] [cursor=pointer]
+        - button [ref=f3e83] [cursor=pointer]
+    - main [ref=f3e86]:
+      - generic [ref=f3e87]:
+        - generic [ref=f3e88]:
+          - heading "知识录入" [level=1] [ref=f3e89]
+          - button "退出" [ref=f3e90] [cursor=pointer]
+        - generic [ref=f3e91]:
+          - generic [ref=f3e92]:
+            - button "追加到已有合集" [ref=f3e93] [cursor=pointer]
+            - button "新建合集" [ref=f3e94] [cursor=pointer]
+          - combobox [ref=f3e95]:
+            - option "选择合集…" [selected]
+            - option "技术（1）"
+            - option "曾国藩的修身之道（51）"
+            - option "孙子兵法（50）"
+            - option "马可·奥勒留《沉思录》（50）"
+            - option "曹操：乱世实用主义（20）"
+            - option "余华语录：活着与人性（50）"
+            - option "天道 (遥远的救世主)（50）"
+            - option "苏东坡：旷达人生哲学（30）"
+            - option "莫言作品：魔幻与乡土（50）"
+            - option "鲁迅：呐喊与彷徨（20）"
+            - option "禅宗公案（50）"
+            - option "王阳明的知行合一（49）"
+            - option "道德经（50）"
+            - option "毛泽东选集（49）"
+            - option "论语·孔子（50）"
+            - option "佛学智慧（50）"
+            - option "塞内卡：斯多葛智慧（50）"
+            - option "尼采：重估一切价值（20）"
+            - option "张一鸣语录（50）"
+            - option "王兴饭否（50）"
+            - option "纳瓦尔宝典（50）"
+            - option "查理·芒格（50）"
+            - option "马斯克第一性原理（100）"
+            - option "保罗·格雷厄姆：黑客与画家（20）"
+            - option "乔布斯的现实扭曲力场（50）"
+            - option "段永平语录（60）"
+          - 'textbox "直接粘贴语录，怎么贴都行： · 一句一行（每行一条） · 空行分段（一段一条，可多行） · 或标准时间戳格式（2024-01-01 10:00 开头的行） 行尾 #标签 会自动识别，「——出处」单独成行会提取为出处。不写时间将自动记录为当前时间。" [ref=f3e96]':
+            - /placeholder: "直接粘贴语录，怎么贴都行：\n\n· 一句一行（每行一条）\n· 空行分段（一段一条，可多行）\n· 或标准时间戳格式（2024-01-01 10:00 开头的行）\n\n行尾 #标签 会自动识别，「——出处」单独成行会提取为出处。不写时间将自动记录为当前时间。"
+          - button "保存" [disabled] [ref=f3e98]
+        - group [ref=f3e99]:
+          - generic "分类管理" [ref=f3e100] [cursor=pointer]
+          - option "BookOpen" [selected]
+          - option "Briefcase"
+          - option "Feather"
+          - option "History"
+          - option "Globe"
+          - option "Sparkles"
+          - option "Dices"
+          - option "Terminal"
+          - option "Search"
+          - option "Share2"
+          - option "Moon"
+          - option "Sun"
+          - option "✦ Star"
+          - option "♥ Heart"
+          - option "⚑ Flag"
+          - option "⚓ Bookmark"
+        - group [ref=f3e101]:
+          - generic "管理合集与语录" [active] [ref=f3e102] [cursor=pointer]
+          - generic [ref=f3e108]:
+            - generic [ref=f3e109]:
+              - button "▸ 技术 c82hndl · 1 cards" [ref=f3e110] [cursor=pointer]:
+                - generic [ref=f3e111]: ▸ 技术
+                - generic [ref=f3e112]: c82hndl · 1 cards
+              - generic [ref=f3e113]:
+                - button "编辑" [ref=f3e114] [cursor=pointer]
+                - button "删合集" [ref=f3e115] [cursor=pointer]
+            - generic [ref=f3e116]:
+              - button "▸ 曾国藩的修身之道 zeng-guofan · 51 cards" [ref=f3e117] [cursor=pointer]:
+                - generic [ref=f3e118]: ▸ 曾国藩的修身之道
+                - generic [ref=f3e119]: zeng-guofan · 51 cards
+              - generic [ref=f3e120]:
+                - button "编辑" [ref=f3e121] [cursor=pointer]
+                - button "删合集" [ref=f3e122] [cursor=pointer]
+            - generic [ref=f3e123]:
+              - button "▸ 孙子兵法 sun-tzu · 50 cards" [ref=f3e124] [cursor=pointer]:
+                - generic [ref=f3e125]: ▸ 孙子兵法
+                - generic [ref=f3e126]: sun-tzu · 50 cards
+              - generic [ref=f3e127]:
+                - button "编辑" [ref=f3e128] [cursor=pointer]
+                - button "删合集" [ref=f3e129] [cursor=pointer]
+            - generic [ref=f3e130]:
+              - button "▸ 马可·奥勒留《沉思录》 marcus-aurelius · 50 cards" [ref=f3e131] [cursor=pointer]:
+                - generic [ref=f3e132]: ▸ 马可·奥勒留《沉思录》
+                - generic [ref=f3e133]: marcus-aurelius · 50 cards
+              - generic [ref=f3e134]:
+                - button "编辑" [ref=f3e135] [cursor=pointer]
+                - button "删合集" [ref=f3e136] [cursor=pointer]
+            - generic [ref=f3e137]:
+              - button "▸ 曹操：乱世实用主义 caocao · 20 cards" [ref=f3e138] [cursor=pointer]:
+                - generic [ref=f3e139]: ▸ 曹操：乱世实用主义
+                - generic [ref=f3e140]: caocao · 20 cards
+              - generic [ref=f3e141]:
+                - button "编辑" [ref=f3e142] [cursor=pointer]
+                - button "删合集" [ref=f3e143] [cursor=pointer]
+            - generic [ref=f3e144]:
+              - button "▸ 余华语录：活着与人性 yuhua · 50 cards" [ref=f3e145] [cursor=pointer]:
+                - generic [ref=f3e146]: ▸ 余华语录：活着与人性
+                - generic [ref=f3e147]: yuhua · 50 cards
+              - generic [ref=f3e148]:
+                - button "编辑" [ref=f3e149] [cursor=pointer]
+                - button "删合集" [ref=f3e150] [cursor=pointer]
+            - generic [ref=f3e151]:
+              - button "▸ 天道 (遥远的救世主) tiandao · 50 cards" [ref=f3e152] [cursor=pointer]:
+                - generic [ref=f3e153]: ▸ 天道 (遥远的救世主)
+                - generic [ref=f3e154]: tiandao · 50 cards
+              - generic [ref=f3e155]:
+                - button "编辑" [ref=f3e156] [cursor=pointer]
+                - button "删合集" [ref=f3e157] [cursor=pointer]
+            - generic [ref=f3e158]:
+              - button "▸ 苏东坡：旷达人生哲学 su-dongpo · 30 cards" [ref=f3e159] [cursor=pointer]:
+                - generic [ref=f3e160]: ▸ 苏东坡：旷达人生哲学
+                - generic [ref=f3e161]: su-dongpo · 30 cards
+              - generic [ref=f3e162]:
+                - button "编辑" [ref=f3e163] [cursor=pointer]
+                - button "删合集" [ref=f3e164] [cursor=pointer]
+            - generic [ref=f3e165]:
+              - button "▸ 莫言作品：魔幻与乡土 moyan · 50 cards" [ref=f3e166] [cursor=pointer]:
+                - generic [ref=f3e167]: ▸ 莫言作品：魔幻与乡土
+                - generic [ref=f3e168]: moyan · 50 cards
+              - generic [ref=f3e169]:
+                - button "编辑" [ref=f3e170] [cursor=pointer]
+                - button "删合集" [ref=f3e171] [cursor=pointer]
+            - generic [ref=f3e172]:
+              - button "▸ 鲁迅：呐喊与彷徨 luxun · 20 cards" [ref=f3e173] [cursor=pointer]:
+                - generic [ref=f3e174]: ▸ 鲁迅：呐喊与彷徨
+                - generic [ref=f3e175]: luxun · 20 cards
+              - generic [ref=f3e176]:
+                - button "编辑" [ref=f3e177] [cursor=pointer]
+                - button "删合集" [ref=f3e178] [cursor=pointer]
+            - generic [ref=f3e179]:
+              - button "▸ 禅宗公案 zen · 50 cards" [ref=f3e180] [cursor=pointer]:
+                - generic [ref=f3e181]: ▸ 禅宗公案
+                - generic [ref=f3e182]: zen · 50 cards
+              - generic [ref=f3e183]:
+                - button "编辑" [ref=f3e184] [cursor=pointer]
+                - button "删合集" [ref=f3e185] [cursor=pointer]
+            - generic [ref=f3e186]:
+              - button "▸ 王阳明的知行合一 wang-yangming · 49 cards" [ref=f3e187] [cursor=pointer]:
+                - generic [ref=f3e188]: ▸ 王阳明的知行合一
+                - generic [ref=f3e189]: wang-yangming · 49 cards
+              - generic [ref=f3e190]:
+                - button "编辑" [ref=f3e191] [cursor=pointer]
+                - button "删合集" [ref=f3e192] [cursor=pointer]
+            - generic [ref=f3e193]:
+              - button "▸ 道德经 tao · 50 cards" [ref=f3e194] [cursor=pointer]:
+                - generic [ref=f3e195]: ▸ 道德经
+                - generic [ref=f3e196]: tao · 50 cards
+              - generic [ref=f3e197]:
+                - button "编辑" [ref=f3e198] [cursor=pointer]
+                - button "删合集" [ref=f3e199] [cursor=pointer]
+            - generic [ref=f3e200]:
+              - button "▸ 毛泽东选集 mao · 49 cards" [ref=f3e201] [cursor=pointer]:
+                - generic [ref=f3e202]: ▸ 毛泽东选集
+                - generic [ref=f3e203]: mao · 49 cards
+              - generic [ref=f3e204]:
+                - button "编辑" [ref=f3e205] [cursor=pointer]
+                - button "删合集" [ref=f3e206] [cursor=pointer]
+            - generic [ref=f3e207]:
+              - button "▸ 论语·孔子 confucius · 50 cards" [ref=f3e208] [cursor=pointer]:
+                - generic [ref=f3e209]: ▸ 论语·孔子
+                - generic [ref=f3e210]: confucius · 50 cards
+              - generic [ref=f3e211]:
+                - button "编辑" [ref=f3e212] [cursor=pointer]
+                - button "删合集" [ref=f3e213] [cursor=pointer]
+            - generic [ref=f3e214]:
+              - button "▸ 佛学智慧 buddhism · 50 cards" [ref=f3e215] [cursor=pointer]:
+                - generic [ref=f3e216]: ▸ 佛学智慧
+                - generic [ref=f3e217]: buddhism · 50 cards
+              - generic [ref=f3e218]:
+                - button "编辑" [ref=f3e219] [cursor=pointer]
+                - button "删合集" [ref=f3e220] [cursor=pointer]
+            - generic [ref=f3e221]:
+              - button "▸ 塞内卡：斯多葛智慧 seneca · 50 cards" [ref=f3e222] [cursor=pointer]:
+                - generic [ref=f3e223]: ▸ 塞内卡：斯多葛智慧
+                - generic [ref=f3e224]: seneca · 50 cards
+              - generic [ref=f3e225]:
+                - button "编辑" [ref=f3e226] [cursor=pointer]
+                - button "删合集" [ref=f3e227] [cursor=pointer]
+            - generic [ref=f3e228]:
+              - button "▸ 尼采：重估一切价值 nietzsche · 20 cards" [ref=f3e229] [cursor=pointer]:
+                - generic [ref=f3e230]: ▸ 尼采：重估一切价值
+                - generic [ref=f3e231]: nietzsche · 20 cards
+              - generic [ref=f3e232]:
+                - button "编辑" [ref=f3e233] [cursor=pointer]
+                - button "删合集" [ref=f3e234] [cursor=pointer]
+            - generic [ref=f3e235]:
+              - button "▸ 张一鸣语录 zhang-yiming · 50 cards" [ref=f3e236] [cursor=pointer]:
+                - generic [ref=f3e237]: ▸ 张一鸣语录
+                - generic [ref=f3e238]: zhang-yiming · 50 cards
+              - generic [ref=f3e239]:
+                - button "编辑" [ref=f3e240] [cursor=pointer]
+                - button "删合集" [ref=f3e241] [cursor=pointer]
+            - generic [ref=f3e242]:
+              - button "▸ 王兴饭否 wang-xing · 50 cards" [ref=f3e243] [cursor=pointer]:
+                - generic [ref=f3e244]: ▸ 王兴饭否
+                - generic [ref=f3e245]: wang-xing · 50 cards
+              - generic [ref=f3e246]:
+                - button "编辑" [ref=f3e247] [cursor=pointer]
+                - button "删合集" [ref=f3e248] [cursor=pointer]
+            - generic [ref=f3e249]:
+              - button "▸ 纳瓦尔宝典 naval · 50 cards" [ref=f3e250] [cursor=pointer]:
+                - generic [ref=f3e251]: ▸ 纳瓦尔宝典
+                - generic [ref=f3e252]: naval · 50 cards
+              - generic [ref=f3e253]:
+                - button "编辑" [ref=f3e254] [cursor=pointer]
+                - button "删合集" [ref=f3e255] [cursor=pointer]
+            - generic [ref=f3e256]:
+              - button "▸ 查理·芒格 munger · 50 cards" [ref=f3e257] [cursor=pointer]:
+                - generic [ref=f3e258]: ▸ 查理·芒格
+                - generic [ref=f3e259]: munger · 50 cards
+              - generic [ref=f3e260]:
+                - button "编辑" [ref=f3e261] [cursor=pointer]
+                - button "删合集" [ref=f3e262] [cursor=pointer]
+            - generic [ref=f3e263]:
+              - button "▸ 马斯克第一性原理 elon-musk · 100 cards" [ref=f3e264] [cursor=pointer]:
+                - generic [ref=f3e265]: ▸ 马斯克第一性原理
+                - generic [ref=f3e266]: elon-musk · 100 cards
+              - generic [ref=f3e267]:
+                - button "编辑" [ref=f3e268] [cursor=pointer]
+                - button "删合集" [ref=f3e269] [cursor=pointer]
+            - generic [ref=f3e270]:
+              - button "▸ 保罗·格雷厄姆：黑客与画家 paul-graham · 20 cards" [ref=f3e271] [cursor=pointer]:
+                - generic [ref=f3e272]: ▸ 保罗·格雷厄姆：黑客与画家
+                - generic [ref=f3e273]: paul-graham · 20 cards
+              - generic [ref=f3e274]:
+                - button "编辑" [ref=f3e275] [cursor=pointer]
+                - button "删合集" [ref=f3e276] [cursor=pointer]
+            - generic [ref=f3e277]:
+              - button "▸ 乔布斯的现实扭曲力场 steve-jobs · 50 cards" [ref=f3e278] [cursor=pointer]:
+                - generic [ref=f3e279]: ▸ 乔布斯的现实扭曲力场
+                - generic [ref=f3e280]: steve-jobs · 50 cards
+              - generic [ref=f3e281]:
+                - button "编辑" [ref=f3e282] [cursor=pointer]
+                - button "删合集" [ref=f3e283] [cursor=pointer]
+            - generic [ref=f3e284]:
+              - button "▸ 段永平语录 duan-yongping · 60 cards" [ref=f3e285] [cursor=pointer]:
+                - generic [ref=f3e286]: ▸ 段永平语录
+                - generic [ref=f3e287]: duan-yongping · 60 cards
+              - generic [ref=f3e288]:
+                - button "编辑" [ref=f3e289] [cursor=pointer]
+                - button "删合集" [ref=f3e290] [cursor=pointer]
