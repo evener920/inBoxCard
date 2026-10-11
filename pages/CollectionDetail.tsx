@@ -7,24 +7,11 @@ import { Slideshow } from '../components/Slideshow';
 import { Note } from '../types';
 import { ApiCollection, fetchCollection } from '../services/cardService';
 
-const notesToRaw = (notes: Note[]): string =>
-  notes
-    .map((n) => {
-      let s = `${n.timestamp}\n${n.content}`;
-      if (n.tags && n.tags.length) s += '\n' + n.tags.map((t) => '#' + t).join(' ');
-      if (n.source) s += '\n——' + n.source;
-      return s;
-    })
-    .join('\n\n');
-
 export const CollectionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { language } = useApp();
-  const [viewMode, setViewMode] = useState<'cards' | 'raw'>('cards');
-  const [copied, setCopied] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]);
-  const [rawContent, setRawContent] = useState<string>('');
   const [collection, setCollection] = useState<ApiCollection | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,9 +39,7 @@ export const CollectionDetail: React.FC = () => {
           coverColor: data.coverColor,
           count: data.count
         });
-        const ns: Note[] = data.notes || [];
-        setNotes(ns);
-        setRawContent(notesToRaw(ns));
+        setNotes(data.notes || []);
         setLoading(false);
       })
       .catch((err) => {
@@ -75,23 +60,6 @@ export const CollectionDetail: React.FC = () => {
     return <div className="p-10 text-center text-slate-500">{error || 'Collection not found'}</div>;
   }
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(rawContent).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  const handleDownload = () => {
-    const element = document.createElement('a');
-    const file = new Blob([rawContent], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = `${collection.id}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
   return (
     <div className="p-6 max-w-5xl mx-auto min-h-screen flex flex-col">
       {/* Header - Sticky & Hover Interaction */}
@@ -106,32 +74,7 @@ export const CollectionDetail: React.FC = () => {
             <span className="font-medium text-sm md:text-base">{language === 'zh' ? '返回' : 'Back'}</span>
           </button>
 
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg md:rounded-xl dark:border-blue-700/50 shadow-sm flex-shrink-0">
-            <button
-              onClick={() => setViewMode('cards')}
-              aria-pressed={viewMode === 'cards'}
-              className={`px-3 md:px-4 py-1.5 rounded-md text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 md:gap-2 ${
-                viewMode === 'cards'
-                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-              }`}
-            >
-              <ICONS.BookOpen size={14} className="md:w-4 md:h-4" />
-              <span>{language === 'zh' ? '卡片' : 'Cards'}</span>
-            </button>
-            <button
-              onClick={() => setViewMode('raw')}
-              aria-pressed={viewMode === 'raw'}
-              className={`px-3 md:px-4 py-1.5 rounded-md text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 md:gap-2 ${
-                viewMode === 'raw'
-                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-              }`}
-            >
-              <ICONS.Info size={14} className="md:w-4 md:h-4" />
-              <span>{language === 'zh' ? '源码' : 'Source'}</span>
-            </button>
-          </div>
+          <div className="flex-shrink-0"></div>
 
           <button
             onClick={() => setShowSlideshow(true)}
@@ -158,89 +101,20 @@ export const CollectionDetail: React.FC = () => {
       </div>
 
       {/* Content */}
-      {viewMode === 'cards' ? (
-        notes.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fadeIn">
-            {notes.map((note) => (
-              <Card
-                key={note.id}
-                note={note}
-                onNoteUpdated={(updated) =>
-                  setNotes((prev) => {
-                    const next = prev.map((n) => (n.id === updated.id ? updated : n));
-                    setRawContent(notesToRaw(next));
-                    return next;
-                  })
-                }
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center text-slate-400 py-20">No notes found in this file.</div>
-        )
-      ) : (
-        <div className="flex flex-col gap-6 animate-fadeIn">
-          {/* Import Instruction Card */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-xl p-5 flex flex-col sm:flex-row gap-4">
-            <div className="flex-shrink-0">
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-300">
-                <ICONS.Info size={20} />
-              </div>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-slate-800 dark:text-blue-200 mb-2 text-sm sm:text-base">
-                {language === 'zh' ? '如何使用源码导入？' : 'How to import raw source?'}
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">
-                {language === 'zh'
-                  ? '这段内容采用“时间戳笔记”格式。复制下方内容后，打开 inBox App 首页右上角菜单，选择「导入笔记」-「时间戳笔记」，App 将自动识别并将其拆分为多张独立的卡片笔记。'
-                  : 'This content uses the "Timestamp Note" format. Copy the content below, open the inBox App menu, select "Import Notes" -> "Timestamp Note". The app will automatically parse and create multiple card notes for you.'}
-              </p>
-              <div className="mt-2">
-                <a
-                  href="#/contribute"
-                  className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
-                >
-                  {language === 'zh' ? '参与贡献（站内指南）' : 'Contribute (in-app guide)'}
-                  <ICONS.Info size={12} />
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Code Editor */}
-          <div className="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-700 flex flex-col min-h-[400px]">
-            <div className="bg-slate-800 px-4 py-3 flex items-center justify-between border-b border-slate-700">
-              <div className="flex space-x-2">
-                <div className="w-3 h-3 rounded-full bg-red-500/50" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
-                <div className="w-3 h-3 rounded-full bg-green-500/50" />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleDownload}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded transition-colors"
-                  title="Download .txt"
-                >
-                  <ICONS.Download size={14} />
-                  <span>.txt</span>
-                </button>
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded font-medium transition-colors"
-                >
-                  {copied ? <span className="text-green-300">Copied!</span> : <ICONS.Copy size={14} />}
-                  <span>{language === 'zh' ? '复制到 inBox' : 'Copy for inBox'}</span>
-                </button>
-              </div>
-            </div>
-            <div className="p-6 overflow-x-auto flex-1">
-              <pre className="font-mono text-sm text-emerald-400 whitespace-pre-wrap leading-relaxed">
-                {rawContent}
-              </pre>
-            </div>
-          </div>
+      {notes.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fadeIn">
+          {notes.map((note) => (
+            <Card
+              key={note.id}
+              note={note}
+              onNoteUpdated={(updated) =>
+                setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)))
+              }
+            />
+          ))}
         </div>
+      ) : (
+        <div className="text-center text-slate-400 py-20">No notes found in this file.</div>
       )}
 
       {showSlideshow && (
