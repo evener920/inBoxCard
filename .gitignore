@@ -19,3 +19,4 @@ pnpm-debug.log*
 tmp/
 temp/
 package-lock.json.playwright-cli/
+.playwright-cli/
