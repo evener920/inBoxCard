@@ -33,54 +33,89 @@ export function genId(prefix: string): string {
 }
 
 // Ported from utils/parser.ts — parses inBox "timestamp note" text into rows.
+// 加固：① 跳过纯分隔符区块（如 ======== A ========）；
+//       ② 从任意位置提取「—出处」与「#标签」，不再要求末行。
 export function parseTimestampNotes(text: string): ApiNote[] {
   const timeRegex = /^(\d{4}[-./]\d{2}[-./]\d{2}\s+\d{2}:\d{2}(?::\d{2})?)\s*$/gm;
   const matches = [...text.matchAll(timeRegex)];
   if (matches.length === 0) return [];
+
+  const sourceRegex = /^\s*(?:——|--|—)\s*(.+)$/;
+  // 标签 token：# 后接任意非空白字符（允许中文标点/引号，如 #爱，有时也是一种伤害）
+  const tagTokenRegex = /#(\S+)/g;
 
   const notes: ApiNote[] = [];
   matches.forEach((match, i) => {
     const timestamp = match[1];
     const startIndex = (match.index as number) + match[0].length;
     const endIndex = i < matches.length - 1 ? (matches[i + 1].index as number) : text.length;
-    let rawContent = text.substring(startIndex, endIndex).trim();
+    const rawContent = text.substring(startIndex, endIndex).trim();
 
-    // 1. Source line first (—— / -- / —) — must run before tag extraction,
-    //    because the tag regex is anchored to end-of-string and would fail
-    //    if a source line trails the tags.
+    const lines = rawContent.split('\n').map((l) => l.trim()).filter(Boolean);
+    const contentLines: string[] = [];
     let source: string | undefined = undefined;
-    let lines = rawContent.split('\n').filter((line) => line.trim() !== '');
-    if (lines.length > 0) {
-      const lastLine = lines[lines.length - 1].trim();
-      const sourceRegex = /^\s*(?:——|--|—)\s*(.+)$/;
-      const sourceMatch = lastLine.match(sourceRegex);
-      if (sourceMatch) {
-        source = sourceMatch[1].trim();
-        lines.pop();
-        rawContent = lines.join('\n').trim();
+    const tagSet = new Set<string>();
+
+    const extractTags = (s: string) => {
+      const toks = s.match(tagTokenRegex);
+      if (toks) toks.forEach((t) => tagSet.add(t.slice(1)));
+    };
+
+    for (const line of lines) {
+      // 1. 出处行（— / -- / —— 开头）
+      const sMatch = line.match(sourceRegex);
+      if (sMatch) {
+        const s = sMatch[1].trim().replace(/^出处\s*/, '');
+        source = source ? `${source}；${s}` : s;
+        continue;
       }
+      // 2. 整行以 # 开头 → 整行都是标签（支持中文标点/引号）
+      if (/^#\S/.test(line)) {
+        extractTags(line);
+        continue;
+      }
+      // 3. 行尾内联标签（如「正文 #标签」），允许中文标点
+      const tMatch = line.match(/(?:\s)#(\S+)$/u);
+      if (tMatch) {
+        tagSet.add(tMatch[1]);
+        const rest = line.slice(0, tMatch.index).trim();
+        if (rest) contentLines.push(rest);
+        continue;
+      }
+      contentLines.push(line);
     }
 
-    // 2. Tags
-    let tags: string[] = [];
-    const tagRegex = /(#[\p{L}\p{N}_\/-]+(\s+|$))+$/u;
-    const tagMatch = rawContent.match(tagRegex);
-    if (tagMatch) {
-      const tagString = tagMatch[0];
-      rawContent = rawContent.substring(0, tagMatch.index as number).trim();
-      tags = tagString.split(/\s+/).filter((t) => t.startsWith('#')).map((t) => t.slice(1));
+    let content = contentLines.join('\n').trim();
+    // 兼容多行拼接后末尾仍残留的内联标签
+    const itMatch = content.match(/(?:\s)#(\S+)$/u);
+    if (itMatch) {
+      tagSet.add(itMatch[1]);
+      content = content.substring(0, itMatch.index).trim();
     }
+
+    // 跳过纯分隔符区块
+    if (isDividerContent(content)) return;
 
     notes.push({
       id: genId('note'),
       timestamp,
-      content: rawContent,
-      tags,
+      content,
+      tags: [...tagSet],
       source
     });
   });
 
   return notes;
+}
+
+// 判断一段内容是否只是章节分隔符（如 ========A========），应被跳过
+function isDividerContent(content: string): boolean {
+  const nonEmpty = content.split('\n').map((l) => l.trim()).filter(Boolean);
+  if (nonEmpty.length === 0) return true;
+  const real = nonEmpty.filter((l) => !/^=+$/.test(l));
+  if (real.length === 0) return true;
+  // 去掉 = 行后只剩 ≤2 个短字母/单字（如章节字母 A/B/C）
+  return real.length <= 2 && real.every((l) => /^[A-Za-z一-龥]{1,4}$/.test(l));
 }
 
 export function parseTags(raw: string | null): string[] {

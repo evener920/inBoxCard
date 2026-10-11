@@ -43,15 +43,24 @@ export function smartParseToTimestampFormat(text: string): string {
   // 已含时间戳行 → 认为是标准格式，原样交给后端
   if (trimmed.split('\n').some((l) => TS_LINE_RE.test(l.trim()))) return trimmed;
 
+  const isDividerBlock = (b: string): boolean => {
+    const lines = b.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) return true;
+    const real = lines.filter((l) => !/^=+$/.test(l));
+    if (real.length === 0) return true;
+    return real.length <= 2 && real.every((l) => /^[A-Za-z一-龥]{1,4}$/.test(l));
+  };
+
   const fmt = (d: Date) => {
     const p = (n: number) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
   };
   const now = Date.now();
-  // 有空行 → 按段拆（支持多行语录）；否则一句一行
+  // 有空行 → 按段拆（支持多行语录）；否则一句一行。跳过章节分隔符区块。
   const blocks = (trimmed.includes('\n\n') ? trimmed.split(/\n\s*\n+/) : trimmed.split('\n'))
     .map((b) => b.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((b) => !isDividerBlock(b));
   return blocks
     .map((b, i) => `${fmt(new Date(now + i * 60000))}\n${b}`)
     .join('\n\n');
