@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CATEGORIES, ICONS } from '../constants';
 import { useApp } from '../context';
-import { ApiCategory, fetchCategories, fetchTagTree, TagTree } from '../services/cardService';
+import { ApiCategory, ApiCollection, fetchCategories, fetchCollections } from '../services/cardService';
 import { favoriteTagCounts, getFavorites, subscribeFavorites } from '../services/favorites';
 import { PineLogo } from './PineLogo';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -20,7 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
   const [cats, setCats] = useState<ApiCategory[]>(
     CATEGORIES.map((c) => ({ id: c.id, name: c.label, nameEn: c.labelEn, icon: c.iconName }))
   );
-  const [tagTree, setTagTree] = useState<TagTree>({});
+  const [cols, setCols] = useState<ApiCollection[]>([]);
   const [favCount, setFavCount] = useState(0);
   const [favTags, setFavTags] = useState<{ tag: string; count: number }[]>([]);
   // 折叠状态（localStorage 记忆；false=展开）
@@ -43,9 +43,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
       .catch(() => {}); // 失败时保留静态兜底
   }, []);
 
-  // 标签树：按分类聚合（可折叠，箭头切换）
+  // 合集清单（含 count）：分类树下展开显示「卡片名 + 数量」，与右侧卡片一一对应
   useEffect(() => {
-    fetchTagTree().then(setTagTree).catch(() => {});
+    fetchCollections().then(setCols).catch(() => {});
   }, [location.pathname]); // 收藏/编辑后回到页面时刷新
 
   // 收藏（localStorage，跨组件同步）
@@ -58,10 +58,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
     return subscribeFavorites(sync);
   }, []);
 
-  // 点击标签 → 全局搜索该标签（搜索已支持 tags 匹配）
-  const handleTagClick = (tag: string) => {
-    onSelectCategory('all');
-    navigate('/', { state: { tag } });
+  // 点击合集 → 合集详情页
+  const handleCollectionClick = (id: string) => {
+    navigate(`/collection/${id}`);
     onClose();
   };
 
@@ -191,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
               </p>
               {cats.map(category => {
                 const Icon = ICONS[category.icon || 'BookOpen'] || ICONS.BookOpen;
-                const tags = tagTree[category.id] || [];
+                const catCols = cols.filter((c) => (c.category || 'uncategorized') === category.id);
                 const isCollapsed = !!collapsed[category.id];
                 return (
                   <div key={category.id}>
@@ -208,10 +207,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
                         <span>{language === 'zh' ? category.name : (category.nameEn || category.name)}</span>
                       </button>
                       {/* 折叠/展开箭头（独立于选中分类） */}
-                      {tags.length > 0 && (
+                      {catCols.length > 0 && (
                         <button
                           onClick={() => toggleCollapsed(category.id)}
-                          aria-label={isCollapsed ? '展开标签' : '折叠标签'}
+                          aria-label={isCollapsed ? '展开列表' : '折叠列表'}
                           aria-expanded={!isCollapsed}
                           className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
                         >
@@ -222,17 +221,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedCategory, onSelectCate
                         </button>
                       )}
                     </div>
-                    {/* 标签树：可折叠 */}
-                    {tags.length > 0 && !isCollapsed && (
-                      <div className="pl-11 pr-3 pb-2 flex flex-wrap gap-1">
-                        {tags.map(({ tag, count }) => (
+                    {/* 合集清单：卡片名 + 数量，与右侧卡片一一对应 */}
+                    {catCols.length > 0 && !isCollapsed && (
+                      <div className="pl-11 pr-2 pb-2 space-y-0.5">
+                        {catCols.map((c) => (
                           <button
-                            key={tag}
-                            onClick={() => handleTagClick(tag)}
-                            title={`${tag} × ${count}`}
-                            className="text-[11px] leading-none px-1.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/40 dark:hover:text-blue-300 transition-colors"
+                            key={c.id}
+                            onClick={() => handleCollectionClick(c.id)}
+                            title={`${language === 'zh' ? c.name : (c.nameEn || c.name)} · ${c.count} Cards`}
+                            className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg text-left text-xs text-slate-500 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-300 transition-colors"
                           >
-                            #{tag}<span className="opacity-50 ml-0.5">{count}</span>
+                            <span className="truncate">{language === 'zh' ? c.name : (c.nameEn || c.name)}</span>
+                            <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500">
+                              {c.count}
+                            </span>
                           </button>
                         ))}
                       </div>
