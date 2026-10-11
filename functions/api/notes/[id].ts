@@ -34,13 +34,33 @@ export async function onRequestPut(context: any): Promise<Response> {
     }
   }
 
-  const tagRegex = /(#[\p{L}\p{N}_\/-]+(\s+|$))+$/u;
-  const tagMatch = content.match(tagRegex);
-  if (tagMatch) {
-    const tagString = tagMatch[0];
-    content = content.substring(0, tagMatch.index as number).trim();
-    const parsed = tagString.split(/\s+/).filter((t: string) => t.startsWith('#')).map((t: string) => t.slice(1));
-    if (parsed.length) tags = parsed;
+  // 与导入规则一致：末行整体以 # 开头 → 整行按空白拆 token 为标签，
+  // 无 # 的 token 续接前一个标签（如「#诚实 ·诚信」→「诚实·诚信」，「#人 与 人」→「人与人」）；
+  // 否则仅提取末行行尾内联标签「正文 #标签」。
+  const contentLines = content.split('\n');
+  const lastLine = contentLines[contentLines.length - 1].trim();
+  if (lastLine.startsWith('#')) {
+    const parsed: string[] = [];
+    for (const tok of lastLine.split(/\s+/)) {
+      if (tok.startsWith('#')) {
+        const t = tok.slice(1);
+        if (t) parsed.push(t);
+      } else if (parsed.length) {
+        parsed[parsed.length - 1] += tok;
+      }
+    }
+    if (parsed.length) {
+      tags = parsed;
+      contentLines.pop();
+      content = contentLines.join('\n').trim();
+    }
+  } else {
+    const tMatch = lastLine.match(/^(.*?)(?:^|\s)#(\S+)\s*$/u);
+    if (tMatch && tMatch[1].trim()) {
+      tags = [tMatch[2]];
+      contentLines[contentLines.length - 1] = tMatch[1].trim();
+      content = contentLines.join('\n').trim();
+    }
   }
 
   const timestamp =

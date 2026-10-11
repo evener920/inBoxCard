@@ -1,30 +1,136 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Note } from '../types';
 import { useApp } from '../context';
 import { useNavigate } from 'react-router-dom';
 import { ICONS } from '../constants';
+import { adminUpdateNote } from '../services/cardService';
 
 interface CardProps {
   note: Note;
   collectionName?: string;
   collectionId?: string;
+  onNoteUpdated?: (note: Note) => void;
 }
 
-export const Card: React.FC<CardProps> = ({ note, collectionName, collectionId }) => {
+export const Card: React.FC<CardProps> = ({ note, collectionName, collectionId, onNoteUpdated }) => {
   const { language } = useApp();
   const navigate = useNavigate();
+  const zh = (z: string, e: string) => (language === 'zh' ? z : e);
+
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState('');
+  const [key, setKey] = useState(localStorage.getItem('inbox_admin_key') || '');
+  const [keyDraft, setKeyDraft] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
 
   // Helper to clean up source string (remove leading dashes)
   const cleanSource = (source: string) => {
     return source.replace(/^[—\-\s]+/, '');
   };
 
+  const startEdit = () => {
+    let content = note.content;
+    if (note.tags && note.tags.length) content += '\n' + note.tags.map((t) => '#' + t).join(' ');
+    if (note.source) content += '\n——' + note.source;
+    setForm(content);
+    setMsg(null);
+    setEditing(true);
+  };
+
+  const save = async () => {
+    const k = key.trim() || keyDraft.trim();
+    if (!k) {
+      setMsg(zh('请输入管理口令', 'Enter admin key'));
+      return;
+    }
+    if (!form.trim()) {
+      setMsg(zh('内容不能为空', 'Content required'));
+      return;
+    }
+    setBusy(true);
+    setMsg(null);
+    try {
+      if (keyDraft.trim()) {
+        setKey(keyDraft.trim());
+        localStorage.setItem('inbox_admin_key', keyDraft.trim());
+      }
+      const res: any = await adminUpdateNote(note.id, { content: form.trim() }, k);
+      onNoteUpdated?.({
+        ...note,
+        content: res.content,
+        tags: res.tags || [],
+        source: res.source || ''
+      });
+      setEditing(false);
+    } catch (err: any) {
+      setMsg(zh('保存失败: ', 'Save failed: ') + (err.message || err));
+    }
+    setBusy(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] border-2 border-blue-300 dark:border-blue-700 flex flex-col h-full">
+        <div className="text-[11px] font-bold text-slate-400 mb-2 font-mono">{note.id}</div>
+        {!key.trim() && (
+          <input
+            type="password"
+            autoFocus
+            placeholder={zh('管理口令', 'Admin key')}
+            value={keyDraft}
+            onChange={(e) => setKeyDraft(e.target.value)}
+            className="w-full mb-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm outline-none focus:border-blue-500"
+          />
+        )}
+        <textarea
+          autoFocus={!!key.trim()}
+          className="w-full flex-1 min-h-[180px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm leading-relaxed outline-none focus:border-blue-500 resize-y"
+          rows={Math.min(16, Math.max(5, form.split('\n').length + 1))}
+          value={form}
+          onChange={(e) => setForm(e.target.value)}
+        />
+        <p className="text-[11px] text-slate-400 mt-1.5">
+          {zh('正文尾部 #标签 与「——出处」行会被自动识别提取。', 'Trailing #tags and —source lines are auto-detected.')}
+        </p>
+        {msg && <p className="text-xs text-red-500 mt-1.5">{msg}</p>}
+        <div className="flex justify-end gap-2 mt-3">
+          <button
+            onClick={() => setEditing(false)}
+            className="px-3 py-1.5 rounded-lg text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+          >
+            {zh('取消', 'Cancel')}
+          </button>
+          <button
+            onClick={save}
+            disabled={busy}
+            className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold disabled:opacity-50 transition-colors"
+          >
+            {busy ? zh('保存中…', 'Saving…') : zh('保存', 'Save')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-slate-700/50 hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-300 flex flex-col h-full group relative hover:-translate-y-1">
-      
+
+      {/* Edit button (hover, top-right) */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          startEdit();
+        }}
+        title={zh('编辑此卡', 'Edit card')}
+        className="absolute top-4 right-4 z-10 p-1.5 rounded-lg text-slate-300 hover:text-blue-600 hover:bg-blue-50 dark:text-slate-600 dark:hover:text-blue-400 dark:hover:bg-slate-700 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all"
+      >
+        <ICONS.Edit size={15} />
+      </button>
+
       {/* 1. Context Label (Search Results only) */}
       {collectionName && (
-        <div 
+        <div
           onClick={(e) => {
             e.stopPropagation();
             if(collectionId) navigate(`/collection/${collectionId}`);
@@ -37,7 +143,7 @@ export const Card: React.FC<CardProps> = ({ note, collectionName, collectionId }
           </span>
         </div>
       )}
-      
+
       {/* 2. Main Content & Source (The Core) */}
       <div className="flex-1 flex flex-col">
         {/* Decorative Quote Mark */}
