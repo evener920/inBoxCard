@@ -4,7 +4,7 @@ import { Note } from '../types';
 import { ICONS } from '../constants';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card } from '../components/Card';
-import { ApiCollection, fetchCollections, fetchNotes } from '../services/cardService';
+import { ApiCollection, fetchCollections, searchNotes, SearchHit } from '../services/cardService';
 
 interface HomeProps {
   selectedCategory: string | 'all';
@@ -42,7 +42,7 @@ export const Home: React.FC<HomeProps> = ({ selectedCategory }) => {
     return result;
   }, [selectedCategory, searchQuery, collections]);
 
-  // Perform deep search on content
+  // Server-side deep search: one API call (D1 SQL LIKE), debounced 300ms
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -51,43 +51,28 @@ export const Home: React.FC<HomeProps> = ({ selectedCategory }) => {
     }
 
     setIsSearching(true);
-    const query = searchQuery.toLowerCase();
-    const results: SearchResult[] = [];
+    const query = searchQuery.trim();
 
-    // Simple delay to avoid blocking UI on every keystroke (debounce simulation)
     const timeoutId = setTimeout(() => {
       let cancelled = false;
-      Promise.all(
-        collections.map(async (col) => {
-          try {
-            const notes = await fetchNotes(col.id);
-            notes.forEach(note => {
-              if (
-                note.content.toLowerCase().includes(query) ||
-                (note.tags && note.tags.some(t => t.toLowerCase().includes(query)))
-              ) {
-                results.push({
-                  ...note,
-                  collectionName: language === 'zh' ? col.name : col.nameEn,
-                  collectionId: col.id
-                });
-              }
-            });
-          } catch {
-            // ignore missing files
+      searchNotes(query)
+        .then((hits: SearchHit[]) => {
+          if (!cancelled) {
+            setSearchResults(hits);
+            setIsSearching(false);
           }
         })
-      ).then(() => {
-        if (!cancelled) {
-          setSearchResults(results);
-          setIsSearching(false);
-        }
-      });
+        .catch(() => {
+          if (!cancelled) {
+            setSearchResults([]);
+            setIsSearching(false);
+          }
+        });
       return () => { cancelled = true; };
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, language]);
+  }, [searchQuery]);
 
   // Clear search state when category changes (ensure list view shows collections)
   useEffect(() => {

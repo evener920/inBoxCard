@@ -72,6 +72,19 @@ export const fetchNotes = async (id: string): Promise<Note[]> => {
 export const fetchRandomNote = (): Promise<{ note: Note; collection: ApiCollection }> =>
   getJSON('/api/random-note');
 
+// 服务端全文搜索（content / tags / source / collection name）
+export interface SearchHit extends Note {
+  collectionId: string;
+  collectionName: string;
+}
+
+export const searchNotes = async (q: string, limit = 100): Promise<SearchHit[]> => {
+  const d = (await getJSON(`/api/search?q=${encodeURIComponent(q)}&limit=${limit}`)) as {
+    results: SearchHit[];
+  };
+  return d.results || [];
+};
+
 // ---------- admin ----------
 const adminHeaders = (key: string): HeadersInit => ({
   'content-type': 'application/json',
