@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context';
 import { ICONS } from '../constants';
 import { Card } from '../components/Card';
-import { FavCard, getFavorites, removeFavorite, subscribeFavorites } from '../services/favorites';
+import { FavCard, favTagList, getFavorites, removeFavorite, subscribeFavorites } from '../services/favorites';
 import { Note } from '../types';
 
 export const Favorites: React.FC = () => {
@@ -24,11 +24,11 @@ export const Favorites: React.FC = () => {
 
   const tagCounts = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const f of favs) for (const t of f.tags || []) { if (t) m[t] = (m[t] || 0) + 1; }
+    for (const f of favs) for (const t of favTagList(f)) { m[t] = (m[t] || 0) + 1; }
     return Object.entries(m).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count);
   }, [favs]);
 
-  const shown = activeTag ? favs.filter((f) => (f.tags || []).includes(activeTag)) : favs;
+  const shown = activeTag ? favs.filter((f) => favTagList(f).includes(activeTag)) : favs;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">

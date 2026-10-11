@@ -57,12 +57,18 @@ export const subscribeFavorites = (cb: () => void): (() => void) => {
 
 const emit = () => window.dispatchEvent(new Event(EVT));
 
-/** 从收藏列表聚合标签计数，降序 */
+/** 卡片的有效标签：无标签时用合集名兜底（保证收藏筛选条能按合集聚合） */
+export const favTagList = (f: FavCard): string[] => {
+  const tags = (f.tags || []).filter(Boolean);
+  if (tags.length > 0) return tags;
+  return f.collectionName ? [f.collectionName] : [];
+};
+
+/** 从收藏列表聚合标签计数（无标签卡片按合集名兜底），降序 */
 export const favoriteTagCounts = (): { tag: string; count: number }[] => {
   const m: Record<string, number> = {};
   for (const f of getFavorites()) {
-    for (const t of f.tags || []) {
-      if (!t) continue;
+    for (const t of favTagList(f)) {
       m[t] = (m[t] || 0) + 1;
     }
   }
